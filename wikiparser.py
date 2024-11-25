@@ -5,7 +5,7 @@ import time
 import re
 
 
-class CraftingRecipeParser:
+class WikiParser:
     def __init__(self, base_url="https://minecraft.wiki"):
         self.base_url = base_url
         self.session = requests.Session()
@@ -25,40 +25,81 @@ class CraftingRecipeParser:
 
     def get_tool_links(self, html_content):
         """Extract tool links from the wiki page."""
-        soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, "html.parser")
         tool_links = []
-        
+
         # Define tool keywords to look for
         tool_keywords = [
-            'axe', 'hoe', 'pickaxe', 'shovel',
-            'fishing rod', 'flint and steel', 'shears',
-            'brush', 'spyglass'
+            "axe",
+            "hoe",
+            "pickaxe",
+            "shovel",
+            "fishing rod",
+            "flint and steel",
+            "shears",
+            "brush",
+            "spyglass",
         ]
-        
+
         # Find all links in the page
-        for link in soup.find_all('a'):
+        for link in soup.find_all("a"):
             name = link.get_text(strip=True)
-            url = link.get('href')
-            
+            url = link.get("href")
+
             # Check if the link text contains any tool keywords AND starts with uppercase
-            if url and any(keyword in name.lower() for keyword in tool_keywords) and name[0].isupper():
-                tool_links.append({
-                    'name': name,
-                    'url': f"{self.base_url}{url}"
-                })
-        
+            if (
+                url
+                and any(keyword in name.lower() for keyword in tool_keywords)
+                and name[0].isupper()
+            ):
+                tool_links.append({"name": name, "url": f"{self.base_url}{url}"})
+
         # Remove duplicates while preserving order
         seen = set()
-        tool_links = [x for x in tool_links if not (x['name'] in seen or seen.add(x['name']))]
-        
+        tool_links = [
+            x for x in tool_links if not (x["name"] in seen or seen.add(x["name"]))
+        ]
+
         return tool_links
+
+    def get_armor_links(self, html_content):
+        """Extract armor links from the wiki page."""
+        soup = BeautifulSoup(html_content, "html.parser")
+        armor_links = []
+
+        armor_keywords = [
+            "helmet",
+            "chestplate",
+            "leggings",
+            "boots",
+            "tunic",
+            "cap",
+        ]
+
+        for link in soup.find_all("a"):
+            name = link.get_text(strip=True)
+            url = link.get("href")
+
+            if (
+                url
+                and any(keyword in name.lower() for keyword in armor_keywords)
+                and len(name.split(" ")) == 2 and name[0].isupper()
+            ):
+                armor_links.append({"name": name, "url": f"{self.base_url}{url}"})
+
+        seen = set()
+        armor_links = [
+            x for x in armor_links if not (x["name"] in seen or seen.add(x["name"]))
+        ]
+
+        return armor_links
 
     def parse_recipe(self, tool_page_html):
         """Extracts crafting recipes and durability from a tool's wiki page."""
         soup = BeautifulSoup(tool_page_html, "html.parser")
         data = {
             "crafting": self.parse_crafting_recipe(soup),
-            "durability": self.parse_durability(soup)
+            "durability": self.parse_durability(soup),
         }
         return data
 
@@ -89,17 +130,19 @@ class CraftingRecipeParser:
                         if item_link and item_img:
                             try:
                                 item_data = {
-                                    "item": item_link.get("href", "").replace("/w/", ""),
+                                    "item": item_link.get("href", "").replace(
+                                        "/w/", ""
+                                    ),
                                     "image": self.base_url + item_img.get("src", ""),
                                     "title": slot.get("data-minetip-title", ""),
-                                    "alt": item_img.get("alt", "")
+                                    "alt": item_img.get("alt", ""),
                                 }
                             except AttributeError:
                                 # If any attribute access fails, create empty item_data
                                 item_data = {}
                     grid_row.append(item_data if item_data else None)
                 grid.append(grid_row)
-            
+
             # Find the output item
             output_slot = soup.find("span", class_="mcui-output")
             if output_slot:
@@ -110,8 +153,10 @@ class CraftingRecipeParser:
                         recipe["output"] = {
                             "item": output_link.get("href", "").replace("/w/", ""),
                             "image": self.base_url + output_img.get("src", ""),
-                            "title": (output_slot.find("span", class_="invslot-item") or {}).get("data-minetip-title", ""),
-                            "alt": output_img.get("alt", "")
+                            "title": (
+                                output_slot.find("span", class_="invslot-item") or {}
+                            ).get("data-minetip-title", ""),
+                            "alt": output_img.get("alt", ""),
                         }
                     except AttributeError:
                         recipe["output"] = None
@@ -140,9 +185,7 @@ class CraftingRecipeParser:
         """Extracts durability information."""
         durability = None
         # Look for the durability row in the infobox
-        durability_row = soup.find(
-            "a", string="Durability"
-        )
+        durability_row = soup.find("a", string="Durability")
         if durability_row:
             # Get the next td/cell containing the durability value
             durability_cell = durability_row.find_parent("tr")
@@ -150,13 +193,23 @@ class CraftingRecipeParser:
                 # Extract text and parse for Java Edition durability
                 text = durability_cell.get_text()
                 # Look for pattern like "1561 [JE only]"
-                match = re.search(r'(\d+)\s*‌?\[.*JE.*\]', text)
+                match = re.search(r"(\d+)\s*‌?\[.*JE.*\]", text)
                 if match:
                     durability = int(match.group(1))
-    
+
         return durability
 
-    def get_tool_recipes(self):
+    def clean_name(self, name):
+        """Cleans special characters from names."""
+        # Remove special characters and normalize spaces
+        cleaned = re.sub(r'[\'"`]', "", name)  # Remove quotes
+        cleaned = re.sub(
+            r"[^a-zA-Z0-9\s-]", "", cleaned
+        )  # Keep only alphanumeric, spaces, and hyphens
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()  # Normalize spaces
+        return cleaned
+
+    def get_tool_data(self):
         """Main method to get all tool data."""
         item_page_url = f"{self.base_url}/w/Item"
         print(f"Fetching Item page: {item_page_url}")
@@ -169,14 +222,17 @@ class CraftingRecipeParser:
 
         recipes = {}
         for idx, tool in enumerate(tool_links, 1):
-            print(f"Processing {idx}/{len(tool_links)}: {tool['name']}")
+            # Clean the tool name
+            clean_tool_name = self.clean_name(tool["name"])
+            print(f"Processing {idx}/{len(tool_links)}: {clean_tool_name}")
+
             tool_page_html = self.fetch_page(tool["url"])
             if not tool_page_html:
                 continue
 
             data = self.parse_recipe(tool_page_html)
             if data:
-                recipes[tool["name"]] = {
+                recipes[clean_tool_name] = {
                     k: v for k, v in data.items() if v is not None
                 }
 
@@ -184,14 +240,237 @@ class CraftingRecipeParser:
 
         return recipes
 
-    def save_recipes_to_json(self, recipes, filename="tool_recipes.json"):
+    def get_armor_data(self):
+        """Gets armor data from the wiki."""
+        armor_url = f"{self.base_url}/w/Armor"
+        print(f"Fetching Armor page: {armor_url}")
+        armor_page_html = self.fetch_page(armor_url)
+        if not armor_page_html:
+            return {}
+
+        armor_links = self.get_armor_links(armor_page_html)
+        print(f"Found {len(armor_links)} armor.")
+
+        recipes = {}
+        for idx, armor in enumerate(armor_links, 1):
+            # Clean the tool name
+            clean_armor_name = self.clean_name(armor["name"])
+            print(f"Processing {idx}/{len(armor_links)}: {clean_armor_name}")
+
+            armor_page_html = self.fetch_page(armor["url"])
+            if not armor_page_html:
+                continue
+
+            data = self.parse_recipe(armor_page_html)
+            if data:
+                recipes[clean_armor_name] = {
+                    k: v for k, v in data.items() if v is not None
+                }
+
+            time.sleep(1)
+
+        return recipes
+
+    def save_data_to_json(self, recipes, filename="tool_recipes.json"):
         """Saves the recipes dictionary to a JSON file."""
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(recipes, f, ensure_ascii=False, indent=4)
         print(f"Saved recipes to {filename}")
 
+    def parse_ore_properties(self, ore_page_html):
+        """Extracts ore properties like hardness, blast resistance, tool requirements."""
+        soup = BeautifulSoup(ore_page_html, "html.parser")
+        properties = {
+            "hardness": None,
+            "blast_resistance": None,
+            "tool_required": None,
+            "renewable": False,
+        }
 
-if __name__ == "__main__":
-    parser = CraftingRecipeParser()
-    recipes = parser.get_tool_recipes()
-    parser.save_recipes_to_json(recipes)
+        # Find the properties table
+        info_table = soup.find("table", class_="infobox-rows")
+        if info_table:
+            rows = info_table.find_all("tr")
+            for row in rows:
+                header = row.find("th")
+                value = row.find("td")
+                if header and value:
+                    header_text = header.get_text(strip=True).lower()
+                    value_text = value.get_text(strip=True)
+
+                    if "hardness" in header_text:
+                        properties["hardness"] = value_text
+                    elif "blast resistance" in header_text:
+                        properties["blast_resistance"] = value_text
+                    elif "tool" in header_text:
+                        properties["tool_required"] = value_text
+                    elif "renewable" in header_text:
+                        properties["renewable"] = value_text.lower() == "yes"
+
+        return properties
+
+    def parse_ore_drops(self, ore_page_html):
+        """Extracts information about what items the ore drops."""
+        soup = BeautifulSoup(ore_page_html, "html.parser")
+        drops = {"normal": [], "silk_touch": [], "fortune": {}}
+
+        # Look for drop information in paragraphs and lists
+        drop_section = soup.find(
+            ["div", "section"], string=lambda text: text and "drops" in text.lower()
+        )
+        if drop_section:
+            # Parse normal drops
+            drop_text = drop_section.get_text()
+            if "drops" in drop_text.lower():
+                # Extract drop information using regex patterns
+                normal_drops = re.findall(
+                    r"drops (\d+(?:-\d+)?) (.+?)(?=\.|$)", drop_text
+                )
+                for amount, item in normal_drops:
+                    drops["normal"].append({"item": item.strip(), "amount": amount})
+
+        return drops
+
+    def clean_text(self, text):
+        """Helper function to clean text by removing footnote markers and extra whitespace"""
+        # Remove footnote markers like [a], [JE], [c], [f], etc.
+        cleaned = re.sub(r"\[\w+\]", "", text)
+        # Remove extra whitespace and strip
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        return cleaned
+
+    def parse_ore_table(self, html_content):
+        """Parses the main ore comparison table from the Minecraft Wiki Ores page."""
+        soup = BeautifulSoup(html_content, "html.parser")
+        ores_data = {}
+
+        # Find the specific table
+        table = soup.find(
+            "table", attrs={"data-description": "Ores, resources and mineral blocks"}
+        )
+        if not table:
+            return ores_data
+
+        # Get all rows
+        rows = table.find_all("tr")
+        if not rows:
+            return ores_data
+
+        # Process header row to get ore names and column spans
+        header_row = rows[0]
+        column_info = []
+        current_col = 0
+
+        for cell in header_row.find_all(["th", "td"]):
+            if cell == header_row.find_all(["th", "td"])[0]:  # Skip first empty cell
+                continue
+
+            colspan = int(cell.get("colspan", 1))
+            ore_name = self.clean_text(cell.get_text(strip=True))
+
+            # Add column info for each column (accounting for colspan)
+            for _ in range(colspan):
+                column_info.append({"ore_name": ore_name, "original_col": current_col})
+                current_col += 1
+
+        # Initialize data structure for each ore
+        for info in column_info:
+            if info["ore_name"] not in ores_data:
+                ores_data[info["ore_name"]] = {}
+
+        # Process each row
+        for row in rows[1:]:  # Skip header row
+            cells = row.find_all(["th", "td"])
+            if not cells:
+                continue
+
+            # Get the category from the first cell
+            category = self.clean_text(cells[0].get_text(strip=True))
+
+            # Process each cell in the row
+            current_col = 0
+            for cell in cells[1:]:  # Skip first cell (category)
+                colspan = int(cell.get("colspan", 1))
+
+                # Get the ore names this cell applies to
+                affected_ores = set()
+                for _ in range(colspan):
+                    if current_col < len(column_info):
+                        affected_ores.add(column_info[current_col]["ore_name"])
+                    current_col += 1
+
+                # Process cell value based on category
+                if category == "Found in biome":
+                    biome_data = self.process_biomes(cell)
+                    for ore in affected_ores:
+                        ores_data[ore][category] = biome_data
+                elif category == "Raw resource":
+                    resource_data = self.process_raw_resource(cell)
+                    for ore in affected_ores:
+                        ores_data[ore][category] = resource_data
+                elif category == "Minimum pickaxe tier required":
+                    pickaxe_tier = self.clean_text(cell.get_text(strip=True))
+                    for ore in affected_ores:
+                        ores_data[ore][category] = pickaxe_tier
+                elif category in [
+                    "Total range",
+                    "Most found in layers",
+                    "None at layers",
+                ]:
+                    # Handle ranges and layer information
+                    value = self.clean_text(cell.get_text(strip=True))
+                    for ore in affected_ores:
+                        ores_data[ore][category] = value
+                elif category == "Abundance":
+                    abundance = self.clean_text(cell.get_text(strip=True))
+                    for ore in affected_ores:
+                        ores_data[ore][category] = abundance
+
+        return ores_data
+
+    def process_biomes(self, cell):
+        """Helper function to process biome cell into structured data"""
+        biomes = []
+        sprite_text_spans = cell.find_all("span", class_="sprite-text")
+
+        if sprite_text_spans:
+            # Process each sprite-text span which contains the biome name
+            for span in sprite_text_spans:
+                biome_name = self.clean_text(span.get_text(strip=True))
+                if biome_name and biome_name.lower() != "any":
+                    biomes.append(biome_name)
+
+        # If no valid biomes found and text is "any", return universal type
+        if not biomes:
+            text = self.clean_text(cell.get_text(strip=True)).lower()
+            if text == "any":
+                return {"type": "universal"}
+            # If there's other text, add it as a biome
+            if text:
+                biomes.append(text)
+
+        return (
+            {"type": "specific", "biomes": biomes} if biomes else {"type": "universal"}
+        )
+
+    def process_raw_resource(self, cell):
+        """Helper function to extract raw resource name from link"""
+        link = cell.find("a")
+        if link:
+            # Get the href and remove '/w/' prefix
+            href = link.get("href", "").replace("/w/", "")
+            if href:
+                return href
+        # Fallback to cleaned text if no link found
+        return self.clean_text(cell.get_text(strip=True))
+
+    def get_ores_data(self):
+        """Main method to get all ore data from the wiki."""
+        ores_url = f"{self.base_url}/w/Ore"
+        print(f"Fetching Ores page: {ores_url}")
+        page_html = self.fetch_page(ores_url)
+        if not page_html:
+            return {}
+
+        ores_data = self.parse_ore_table(page_html)
+        return ores_data
