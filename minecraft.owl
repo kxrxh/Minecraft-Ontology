@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+   xmlns:mc="http://minecraft.example.org/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Netherite_Shovel">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Netherite Shovel</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2031</mc:hasDurability>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Golden_Shovel">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Golden Shovel</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">32</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Gold_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Stone_Shovel">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Stone Shovel</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">131</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Cobblestone"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Golden_Axe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Golden Axe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">32</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Gold_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Wooden_Pickaxe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Wooden Pickaxe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">59</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Oak_Planks"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Diamond_Pickaxe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Diamond Pickaxe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1561</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Diamond"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Gold">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Gold</rdfs:label>
+    <mc:requiresPickaxe>Iron</mc:requiresPickaxe>
+    <mc:hasVariant>Stone</mc:hasVariant>
+    <mc:hasVariant>Deepslate</mc:hasVariant>
+    <mc:dropsResource>Raw Gold</mc:dropsResource>
+    <mc:hasAbundance>Rare</mc:hasAbundance>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Shovel">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Shovel</rdfs:label>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Oak_Planks"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Fishing_Rod">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Fishing Rod</rdfs:label>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/String"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Diamond_Hoe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Diamond Hoe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1561</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Diamond"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Emerald">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Emerald</rdfs:label>
+    <mc:requiresPickaxe>Iron</mc:requiresPickaxe>
+    <mc:hasVariant>Stone</mc:hasVariant>
+    <mc:hasVariant>Deepslate</mc:hasVariant>
+    <mc:dropsResource>Emerald</mc:dropsResource>
+    <mc:hasAbundance>Very rare</mc:hasAbundance>
+    <mc:foundInBiome>Mountains</mc:foundInBiome>
+    <mc:foundInBiome>Mountain Grove</mc:foundInBiome>
+    <mc:foundInBiome>Snowy Slopes</mc:foundInBiome>
+    <mc:foundInBiome>Jagged Peaks</mc:foundInBiome>
+    <mc:foundInBiome>Frozen Peaks</mc:foundInBiome>
+    <mc:foundInBiome>Stony Peaks</mc:foundInBiome>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Hoe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Hoe</rdfs:label>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Oak_Planks"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Nether_Gold">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Nether Gold</rdfs:label>
+    <mc:hasVariant>Netherrack</mc:hasVariant>
+    <mc:dropsResource>Nether Gold</mc:dropsResource>
+    <mc:hasAbundance>Common</mc:hasAbundance>
+    <mc:foundInBiome>Nether</mc:foundInBiome>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Copper">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Copper</rdfs:label>
+    <mc:requiresPickaxe>Stone</mc:requiresPickaxe>
+    <mc:hasVariant>Stone</mc:hasVariant>
+    <mc:hasVariant>Deepslate</mc:hasVariant>
+    <mc:dropsResource>Raw Copper</mc:dropsResource>
+    <mc:hasAbundance>Common</mc:hasAbundance>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Iron">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Iron</rdfs:label>
+    <mc:requiresPickaxe>Stone</mc:requiresPickaxe>
+    <mc:hasVariant>Stone</mc:hasVariant>
+    <mc:hasVariant>Deepslate</mc:hasVariant>
+    <mc:dropsResource>Raw Iron</mc:dropsResource>
+    <mc:hasAbundance>Common</mc:hasAbundance>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Lapis_Lazuli">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Lapis Lazuli</rdfs:label>
+    <mc:requiresPickaxe>Iron</mc:requiresPickaxe>
+    <mc:hasVariant>Stone</mc:hasVariant>
+    <mc:hasVariant>Deepslate</mc:hasVariant>
+    <mc:dropsResource>Lapis Lazuli</mc:dropsResource>
+    <mc:hasAbundance>Uncommon</mc:hasAbundance>
+    <mc:foundInBiome>Dripstone Caves</mc:foundInBiome>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Iron_Hoe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Iron Hoe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">250</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Iron_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Golden_Hoe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Golden Hoe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">32</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Gold_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Stone_Axe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Stone Axe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">131</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Cobblestone"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Pickaxe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Pickaxe</rdfs:label>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Oak_Planks"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/hasVariant">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Diamond">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Diamond</rdfs:label>
+    <mc:requiresPickaxe>Iron</mc:requiresPickaxe>
+    <mc:hasVariant>Stone</mc:hasVariant>
+    <mc:hasVariant>Deepslate</mc:hasVariant>
+    <mc:dropsResource>Diamond</mc:dropsResource>
+    <mc:hasAbundance>Rare</mc:hasAbundance>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Wooden_Shovel">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Wooden Shovel</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">59</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Oak_Planks"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Stone_Hoe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Stone Hoe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">131</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Cobblestone"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Coal">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Coal</rdfs:label>
+    <mc:requiresPickaxe>Wooden</mc:requiresPickaxe>
+    <mc:hasVariant>Stone</mc:hasVariant>
+    <mc:hasVariant>Deepslate</mc:hasVariant>
+    <mc:dropsResource>Coal</mc:dropsResource>
+    <mc:hasAbundance>Very common</mc:hasAbundance>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Wooden_Hoe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Wooden Hoe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">59</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Oak_Planks"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Nether_Quartz">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Nether Quartz</rdfs:label>
+    <mc:hasVariant>Netherrack</mc:hasVariant>
+    <mc:dropsResource>Nether Quartz</mc:dropsResource>
+    <mc:hasAbundance>Common</mc:hasAbundance>
+    <mc:foundInBiome>Nether</mc:foundInBiome>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Axe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Axe</rdfs:label>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Oak_Planks"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Iron_Shovel">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Iron Shovel</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">250</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Iron_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Golden_Pickaxe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Golden Pickaxe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">32</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Gold_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Iron_Axe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Iron Axe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">250</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Iron_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Ancient_Debris">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Ancient Debris</rdfs:label>
+    <mc:requiresPickaxe>Diamond</mc:requiresPickaxe>
+    <mc:hasVariant>Netherrack</mc:hasVariant>
+    <mc:dropsResource>Ancient Debris</mc:dropsResource>
+    <mc:hasAbundance>Very rare</mc:hasAbundance>
+    <mc:foundInBiome>Nether</mc:foundInBiome>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Flint_and_Steel">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Flint and Steel</rdfs:label>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Iron_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Flint"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Shears">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Shears</rdfs:label>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Iron_Ingot"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Stone_Pickaxe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Stone Pickaxe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">131</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Cobblestone"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Iron_Pickaxe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Iron Pickaxe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">250</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Iron_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Wooden_Axe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Wooden Axe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">59</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Oak_Planks"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Netherite_Hoe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Netherite Hoe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2031</mc:hasDurability>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Copper_Ingot">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/String">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Brush">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Brush</rdfs:label>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Feather"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Copper_Ingot"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Diamond_Axe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Diamond Axe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1561</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Diamond"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Gold_Ingot">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Amethyst_Shard">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/ore/Redstone">
+    <rdf:type rdf:resource="http://minecraft.example.org/Ore"/>
+    <rdfs:label>Redstone</rdfs:label>
+    <mc:requiresPickaxe>Iron</mc:requiresPickaxe>
+    <mc:hasVariant>Stone</mc:hasVariant>
+    <mc:hasVariant>Deepslate</mc:hasVariant>
+    <mc:dropsResource>Redstone</mc:dropsResource>
+    <mc:hasAbundance>Common</mc:hasAbundance>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Netherite_Axe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Netherite Axe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2031</mc:hasDurability>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/dropsResource">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Spyglass">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Spyglass</rdfs:label>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Amethyst_Shard"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Copper_Ingot"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Diamond">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/foundInBiome">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/craftedFrom">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Stick">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/requiresPickaxe">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Cobblestone">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Flint">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Diamond_Shovel">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Diamond Shovel</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1561</mc:hasDurability>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Diamond"/>
+    <mc:craftedFrom rdf:resource="http://minecraft.example.org/material/Stick"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/tool/Netherite_Pickaxe">
+    <rdf:type rdf:resource="http://minecraft.example.org/Tool"/>
+    <rdfs:label>Netherite Pickaxe</rdfs:label>
+    <mc:hasDurability rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2031</mc:hasDurability>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/hasDurability">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/Tool">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/hasAbundance">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/Material">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Iron_Ingot">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Feather">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/Ore">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://minecraft.example.org/material/Oak_Planks">
+    <rdf:type rdf:resource="http://minecraft.example.org/Material"/>
+  </rdf:Description>
+</rdf:RDF>
