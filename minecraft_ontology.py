@@ -609,6 +609,18 @@ def can_be_mined_with(g, tool_name, ore_name):
     return {f"Can {tool_name} mine {ore_name}?": query}
 
 
+def get_recipe_for(g, tool_name):
+    query = f"""
+    SELECT ?recipe ?grid
+    WHERE {{
+        ?tool rdfs:label "{tool_name}" ;
+              mc:hasRecipe ?recipe .
+        ?recipe mc:recipeGrid ?grid .
+    }}
+    """
+    return {f"Get recipe for {tool_name}": query}
+
+
 def execute_query(g, description, query):
     print(f"\n{'='*80}")
     print(f"Query: {description}")
@@ -617,7 +629,7 @@ def execute_query(g, description, query):
     results = g.query(query)
     columns = results.vars
 
-    # Calculate> column widths
+    # Calculate column widths
     widths = {col: len(str(col)) for col in columns}
     for row in results:
         for col, value in zip(columns, row):
@@ -630,10 +642,10 @@ def execute_query(g, description, query):
 
     # Print rows
     for row in results:
-        formatted_row = " | ".join(
-            f"{str(value):^{widths[col]}}" for col, value in zip(columns, row)
-        )
-        print(formatted_row)
+        formatted_values = []
+        for col, value in zip(columns, row):
+            formatted_values.append(f"{str(value):^{widths[col]}}")
+        print(" | ".join(formatted_values))
 
     print(f"\nTotal results: {len(list(results))}\n")
 
@@ -661,6 +673,7 @@ def main():
     all_queries.update(can_be_mined_with(g, "Golden Pickaxe", "Diamond"))
     all_queries.update(can_be_mined_with(g, "Stone Pickaxe", "Diamond"))
     all_queries.update(can_be_mined_with(g, "Iron Pickaxe", "Diamond"))
+    all_queries.update(get_recipe_for(g, "Wooden Sword"))
 
     # Execute all queries
     for description, query in all_queries.items():
