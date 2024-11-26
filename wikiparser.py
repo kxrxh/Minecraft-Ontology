@@ -83,7 +83,8 @@ class WikiParser:
             if (
                 url
                 and any(keyword in name.lower() for keyword in armor_keywords)
-                and len(name.split(" ")) == 2 and name[0].isupper()
+                and len(name.split(" ")) == 2
+                and name[0].isupper()
             ):
                 armor_links.append({"name": name, "url": f"{self.base_url}{url}"})
 
@@ -95,13 +96,14 @@ class WikiParser:
         return armor_links
 
     def parse_recipe(self, tool_page_html):
-        """Extracts crafting recipes and durability from a tool's wiki page."""
+        """Extracts crafting recipes, durability, and armor points from a tool/armor wiki page."""
         soup = BeautifulSoup(tool_page_html, "html.parser")
         data = {
             "crafting": self.parse_crafting_recipe(soup),
             "durability": self.parse_durability(soup),
+            "armor_points": self.parse_armor_points(soup),
         }
-        return data
+        return {k: v for k, v in data.items() if v is not None}
 
     def parse_crafting_recipe(self, soup):
         """Extracts crafting recipe information including item images and links."""
@@ -181,23 +183,31 @@ class WikiParser:
         recipe["type"] = "crafting"
         return recipe
 
-    def parse_durability(self, soup):
-        """Extracts durability information."""
+    def parse_durability(self, soup) -> str | None:
+        """Extracts durability information from the infobox."""
         durability = None
-        # Look for the durability row in the infobox
-        durability_row = soup.find("a", string="Durability")
-        if durability_row:
-            # Get the next td/cell containing the durability value
-            durability_cell = durability_row.find_parent("tr")
-            if durability_cell:
-                # Extract text and parse for Java Edition durability
-                text = durability_cell.get_text()
-                # Look for pattern like "1561 [JE only]"
-                match = re.search(r"(\d+)\s*‌?\[.*JE.*\]", text)
-                if match:
-                    durability = int(match.group(1))
+        infobox = soup.find("table", class_="infobox-rows")
+        if infobox:
+            for row in infobox.find_all("tr"):
+                if row.find("a", string="Durability"):
+                    durability = row.find("td").find("p").get_text(strip=True)
+                    # Extract just the number from the beginning
+                    durability = ''.join(filter(str.isdigit, durability.split()[0]))
+                    break
+        return int(durability) if durability else None
 
-        return durability
+    def parse_armor_points(self, soup):
+        """Extracts armor points from the infobox."""
+        armor_points = None
+        infobox = soup.find("table", class_="infobox-rows")
+        if infobox:
+            for row in infobox.find_all("tr"):
+                if row.find("a", string="Armor"):
+                    armor_points = row.find("td").find("p").get_text(strip=True)
+                    if armor_points:
+                        armor_points = ''.join(filter(str.isdigit, armor_points.split()[0]))
+                        break
+        return armor_points
 
     def clean_name(self, name):
         """Cleans special characters from names."""
@@ -271,8 +281,15 @@ class WikiParser:
 
         return recipes
 
-    def save_data_to_json(self, recipes, filename="tool_recipes.json"):
-        """Saves the recipes dictionary to a JSON file."""
+    def save_data_to_json(
+        self, recipes: dict, filename: str = "tool_recipes.json"
+    ) -> None:
+        """Saves the recipes dictionary to a JSON file.
+
+        Args:
+            recipes: Dictionary containing recipe data to save
+            filename: Name of the JSON file to save to. Defaults to "tool_recipes.json"
+        """
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(recipes, f, ensure_ascii=False, indent=4)
         print(f"Saved recipes to {filename}")
@@ -474,3 +491,127 @@ class WikiParser:
 
         ores_data = self.parse_ore_table(page_html)
         return ores_data
+
+    def get_sword_links(self):
+        """Return hardcoded sword links."""
+        return [
+            {"name": "Wooden Sword", "url": f"{self.base_url}/w/Wooden_Sword"},
+            {"name": "Stone Sword", "url": f"{self.base_url}/w/Stone_Sword"},
+            {"name": "Iron Sword", "url": f"{self.base_url}/w/Iron_Sword"},
+            {"name": "Golden Sword", "url": f"{self.base_url}/w/Golden_Sword"},
+            {"name": "Diamond Sword", "url": f"{self.base_url}/w/Diamond_Sword"},
+            {"name": "Netherite Sword", "url": f"{self.base_url}/w/Netherite_Sword"},
+        ]
+
+    def parse_sword_stats_from_file(self, html_file="sword_damage.html"):
+        """Extract sword statistics from the sword_damage.html file."""
+        try:
+            with open(html_file, "r", encoding="utf-8") as f:
+                html_content = f.read()
+        except FileNotFoundError:
+            print(f"Error: {html_file} not found")
+            return {}
+
+        soup = BeautifulSoup(html_content, "html.parser")
+        sword_stats = {}
+
+        # Find the sword stats table
+        table = soup.find(
+            "table", attrs={"data-description": "Sword attack damage by type"}
+        )
+        if not table:
+            return sword_stats
+
+        # Get all rows
+        rows = table.find_all("tr")
+        if len(rows) < 2:
+            return sword_stats
+
+        # Get material names from header row
+        headers = rows[0].find_all("th")
+        materials = []
+        for header in headers[1:]:  # Skip first header (Material)
+            material_text = header.find("span", class_="sprite-text")
+            if material_text:
+                materials.append(material_text.get_text(strip=True))
+
+        # Define the stats we want to extract
+        stat_rows = {
+            "Attack Damage": "attack_damage",
+            "Attack Speed": "attack_speed",
+            "Damage/Second (DPS)": "dps",
+            "Durability": "durability",
+        }
+
+        # Process each stat row
+        for row in rows[1:]:  # Skip header row
+            cells = row.find_all(["th", "td"])
+            if len(cells) < 2:
+                continue
+
+            stat_name = cells[0].get_text(strip=True)
+            if stat_name not in stat_rows:
+                continue
+
+            # Process each material's value for this stat
+            for material, cell in zip(materials, cells[1:]):
+                if material not in sword_stats:
+                    sword_stats[material] = {}
+
+                # Clean and convert the value
+                value = (
+                    cell.get_text(strip=True).split("×")[0].strip()
+                )  # Remove "× N hearts" suffix
+                try:
+                    value = float(value)
+                    if value.is_integer():
+                        value = int(value)
+                except ValueError:
+                    pass  # Keep as string if conversion fails
+
+                sword_stats[material][stat_rows[stat_name]] = value
+
+        return sword_stats
+
+    def get_sword_data(self):
+        """Main method to get all sword data."""
+        # First get the basic sword data (recipes etc.)
+        item_page_url = f"{self.base_url}/w/Item"
+        print(f"Fetching Item page: {item_page_url}")
+        item_page_html = self.fetch_page(item_page_url)
+        if not item_page_html:
+            return {}
+
+        sword_links = self.get_sword_links()
+        print(f"Found {len(sword_links)} swords.")
+
+        # Get sword stats from the local HTML file
+        sword_stats = self.parse_sword_stats_from_file()
+
+        recipes = {}
+        for idx, sword in enumerate(sword_links, 1):
+            clean_sword_name = self.clean_name(sword["name"])
+            print(f"Processing {idx}/{len(sword_links)}: {clean_sword_name}")
+
+            sword_page_html = self.fetch_page(sword["url"])
+            if not sword_page_html:
+                continue
+
+            # Get crafting recipe
+            data = self.parse_recipe(sword_page_html)
+
+            # Add sword stats from the local file
+            material = clean_sword_name.split()[
+                0
+            ]  # Get material name (e.g., "Wooden" from "Wooden Sword")
+            if material in sword_stats:
+                data.update(sword_stats[material])
+
+            if data:
+                recipes[clean_sword_name] = {
+                    k: v for k, v in data.items() if v is not None
+                }
+
+            time.sleep(1)
+
+        return recipes

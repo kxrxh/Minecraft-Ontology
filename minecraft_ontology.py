@@ -39,7 +39,6 @@ def create_minecraft_ontology():
     g.bind("layer", LAYER)
     g.bind("recipe", RECIPE)
     g.bind("armor", ARMOR)
-
     # Define main classes
     g.add((MC.Tool, RDF.type, RDFS.Class))
     g.add((MC.Ore, RDF.type, RDFS.Class))
@@ -49,19 +48,19 @@ def create_minecraft_ontology():
     g.add((MC.Recipe, RDF.type, RDFS.Class))
     g.add((MC.Armor, RDF.type, RDFS.Class))
 
-    # Define all properties upfront
-    properties = {
-        "requiresPickaxe": (OWL.ObjectProperty, MC.Ore, MC.Tool),
-        "hasDurability": (OWL.DatatypeProperty, MC.Tool, XSD.integer),
-        "hasAbundance": (OWL.DatatypeProperty, MC.Ore, XSD.string),
-        # ... add all properties here
-    }
+    # Define subclasses
+    g.add((MC.MiningTool, RDFS.subClassOf, MC.Tool))
+    g.add((MC.CombatTool, RDFS.subClassOf, MC.Tool))
+    g.add((MC.FarmingTool, RDFS.subClassOf, MC.Tool))
 
-    for prop_name, (prop_type, domain, range_) in properties.items():
-        prop_uri = MC[prop_name]
-        g.add((prop_uri, RDF.type, prop_type))
-        g.add((prop_uri, RDFS.domain, domain))
-        g.add((prop_uri, RDFS.range, range_))
+    # Add material property relationships
+    g.add((MC.canSmelt, RDF.type, OWL.DatatypeProperty))
+    g.add((MC.canSmelt, RDFS.domain, MC.Material))
+    g.add((MC.canSmelt, RDFS.range, XSD.boolean))
+
+    g.add((MC.smeltsInto, RDF.type, OWL.ObjectProperty))
+    g.add((MC.smeltsInto, RDFS.domain, MC.Material))
+    g.add((MC.smeltsInto, RDFS.range, MC.Material))
 
     # Define recipe-related properties
     g.add((MC.usesMaterial, RDF.type, OWL.ObjectProperty))
@@ -126,6 +125,19 @@ def create_minecraft_ontology():
     g.add((MC.hasBaseDurability, RDFS.domain, MC.Armor))
     g.add((MC.hasBaseDurability, RDFS.range, XSD.integer))
 
+    # Add sword-specific properties
+    g.add((MC.hasAttackDamage, RDF.type, OWL.DatatypeProperty))
+    g.add((MC.hasAttackDamage, RDFS.domain, MC.Tool))
+    g.add((MC.hasAttackDamage, RDFS.range, XSD.float))
+
+    g.add((MC.hasAttackSpeed, RDF.type, OWL.DatatypeProperty))
+    g.add((MC.hasAttackSpeed, RDFS.domain, MC.Tool))
+    g.add((MC.hasAttackSpeed, RDFS.range, XSD.float))
+
+    g.add((MC.hasDPS, RDF.type, OWL.DatatypeProperty))
+    g.add((MC.hasDPS, RDFS.domain, MC.Tool))
+    g.add((MC.hasDPS, RDFS.range, XSD.float))
+
     # Load ore data from JSON
     ores_data = load_json_data("ore_data.json")
 
@@ -155,7 +167,7 @@ def create_minecraft_ontology():
             else:
                 g.add((ore_uri, MC.isUniversal, Literal(True)))
 
-        print("=" * 80)
+        layer_uri = LAYER[ore_data["Total range"].replace(" ", "_")]
         g.add((layer_uri, RDF.type, MC.Layer))
         g.add((layer_uri, RDFS.label, Literal(ore_data["Total range"])))
         g.add((ore_uri, MC.foundInLayer, layer_uri))
@@ -183,6 +195,7 @@ def create_minecraft_ontology():
             recipe_uri = RECIPE[tool_name.replace(" ", "_") + "_Recipe"]
             g.add((recipe_uri, RDF.type, MC.Recipe))
             g.add((tool_uri, MC.hasRecipe, recipe_uri))
+            g.add((recipe_uri, MC.isRecipeFor, tool_uri))
 
             # Simplify grid to just item names
             simplified_grid = []
@@ -205,8 +218,9 @@ def create_minecraft_ontology():
 
             # Add material relationships to recipe
             for material, count in material_counts.items():
-                material_uri = MATERIAL[material]
+                material_uri = MATERIAL[material.replace(" ", "_")]
                 g.add((material_uri, RDF.type, MC.Material))
+                g.add((material_uri, RDFS.label, Literal(material)))
 
                 # Connect recipe to material
                 g.add((recipe_uri, MC.usesMaterial, material_uri))
@@ -214,10 +228,10 @@ def create_minecraft_ontology():
                     (recipe_uri, MC.materialCount, Literal(count, datatype=XSD.integer))
                 )
 
-            # Determine primary material once
+            # Find primary material (most used in recipe)
             if material_counts:
-                primary_material = max(material_counts, key=material_counts.get)
-                primary_material_uri = MATERIAL[primary_material]
+                primary_material = max(material_counts.items(), key=lambda x: x[1])[0]
+                primary_material_uri = MATERIAL[primary_material.replace(" ", "_")]
                 g.add((recipe_uri, MC.primaryMaterial, primary_material_uri))
 
     # Load armor data from JSON
@@ -233,7 +247,8 @@ def create_minecraft_ontology():
         if "crafting" in armor_info and "grid" in armor_info["crafting"]:
             recipe_uri = RECIPE[armor_name.replace(" ", "_") + "_Recipe"]
             g.add((recipe_uri, RDF.type, MC.Recipe))
-            g.add((armor_uri, MC.hasRecipe, recipe_uri))
+            g.add((armor_uri, MC.hasArmorRecipe, recipe_uri))
+            g.add((recipe_uri, MC.isRecipeForArmor, armor_uri))
 
             # Process crafting grid
             simplified_grid = []
@@ -256,9 +271,9 @@ def create_minecraft_ontology():
 
             # Add material relationships to recipe
             for material, count in material_counts.items():
-                material_uri = MATERIAL[material.replace("_", " ")]
+                material_uri = MATERIAL[material.replace(" ", "_")]
                 g.add((material_uri, RDF.type, MC.Material))
-                g.add((material_uri, RDFS.label, Literal(material.replace("_", " "))))
+                g.add((material_uri, RDFS.label, Literal(material)))
 
                 # Connect recipe to material
                 g.add((recipe_uri, MC.usesMaterial, material_uri))
@@ -271,7 +286,7 @@ def create_minecraft_ontology():
                     primary_material = max(material_counts.items(), key=lambda x: x[1])[
                         0
                     ]
-                    primary_material_uri = MATERIAL[primary_material.replace("_", " ")]
+                    primary_material_uri = MATERIAL[primary_material.replace(" ", "_")]
                     g.add((recipe_uri, MC.primaryMaterial, primary_material_uri))
 
         # Determine material and type
@@ -320,52 +335,6 @@ def create_minecraft_ontology():
                 )
             )
 
-            # Add protection values
-            protection_values = {
-                "helmet": {
-                    "Leather": 1,
-                    "Gold": 2,
-                    "Chainmail": 2,
-                    "Iron": 2,
-                    "Diamond": 3,
-                    "Netherite": 3,
-                },
-                "chestplate": {
-                    "Leather": 3,
-                    "Gold": 5,
-                    "Chainmail": 5,
-                    "Iron": 6,
-                    "Diamond": 8,
-                    "Netherite": 8,
-                },
-                "leggings": {
-                    "Leather": 2,
-                    "Gold": 3,
-                    "Chainmail": 4,
-                    "Iron": 5,
-                    "Diamond": 6,
-                    "Netherite": 6,
-                },
-                "boots": {
-                    "Leather": 1,
-                    "Gold": 1,
-                    "Chainmail": 1,
-                    "Iron": 2,
-                    "Diamond": 3,
-                    "Netherite": 3,
-                },
-            }
-
-            # Add durability values
-            durability_values = {
-                "Leather": 55,
-                "Gold": 77,
-                "Chainmail": 166,
-                "Iron": 165,
-                "Diamond": 363,
-                "Netherite": 407,
-            }
-
             # Find slot and add protection/durability
             for slot in armor_slots:
                 if slot in armor_name.lower():
@@ -374,7 +343,7 @@ def create_minecraft_ontology():
                             armor_uri,
                             MC.hasProtectionValue,
                             Literal(
-                                protection_values[slot][found_material],
+                                armor_info["armor_points"],
                                 datatype=XSD.integer,
                             ),
                         )
@@ -383,14 +352,136 @@ def create_minecraft_ontology():
                         (
                             armor_uri,
                             MC.hasBaseDurability,
-                            Literal(
-                                durability_values[found_material], datatype=XSD.integer
-                            ),
+                            Literal(armor_info["durability"], datatype=XSD.integer),
                         )
                     )
                     break
 
-    queries = {
+    # Load sword data from JSON
+    sword_data = load_json_data("sword_recipes.json")
+
+    # Add sword information
+    for sword_name, sword_info in sword_data.items():
+        sword_uri = TOOL[sword_name.replace(" ", "_")]
+        g.add((sword_uri, RDF.type, MC.Tool))
+        g.add((sword_uri, RDF.type, MC.CombatTool))  # Add sword as combat tool
+        g.add((sword_uri, RDFS.label, Literal(sword_name)))
+
+        # Add sword stats
+        if "durability" in sword_info:
+            g.add(
+                (
+                    sword_uri,
+                    MC.hasDurability,
+                    Literal(int(sword_info["durability"]), datatype=XSD.integer),
+                )
+            )
+
+        if "attack_damage" in sword_info:
+            g.add(
+                (
+                    sword_uri,
+                    MC.hasAttackDamage,
+                    Literal(float(sword_info["attack_damage"]), datatype=XSD.float),
+                )
+            )
+
+        if "attack_speed" in sword_info:
+            g.add(
+                (
+                    sword_uri,
+                    MC.hasAttackSpeed,
+                    Literal(float(sword_info["attack_speed"]), datatype=XSD.float),
+                )
+            )
+
+        if "dps" in sword_info:
+            g.add(
+                (
+                    sword_uri,
+                    MC.hasDPS,
+                    Literal(float(sword_info["dps"]), datatype=XSD.float),
+                )
+            )
+
+        # Add recipe information
+        if "crafting" in sword_info and "grid" in sword_info["crafting"]:
+            recipe_uri = RECIPE[sword_name.replace(" ", "_") + "_Recipe"]
+            g.add((recipe_uri, RDF.type, MC.Recipe))
+            g.add((sword_uri, MC.hasRecipe, recipe_uri))
+            g.add((recipe_uri, MC.isRecipeFor, sword_uri))
+
+            # Process crafting grid
+            simplified_grid = []
+            material_counts = {}
+
+            for row in sword_info["crafting"]["grid"]:
+                grid_row = []
+                for item in row:
+                    if item and isinstance(item, dict) and "item" in item:
+                        material = item["item"]
+                        grid_row.append(material)
+                        material_counts[material] = material_counts.get(material, 0) + 1
+                    else:
+                        grid_row.append(None)
+                simplified_grid.append(grid_row)
+
+            # Store the simplified grid as a JSON string
+            grid_json = json.dumps(simplified_grid)
+            g.add((recipe_uri, MC.recipeGrid, Literal(grid_json)))
+
+            # Add material relationships to recipe
+            for material, count in material_counts.items():
+                material_uri = MATERIAL[material.replace(" ", "_")]
+                g.add((material_uri, RDF.type, MC.Material))
+                g.add((material_uri, RDFS.label, Literal(material)))
+
+                # Connect recipe to material
+                g.add((recipe_uri, MC.usesMaterial, material_uri))
+                g.add(
+                    (recipe_uri, MC.materialCount, Literal(count, datatype=XSD.integer))
+                )
+
+            # Find primary material (most used in recipe)
+            if material_counts:
+                primary_material = max(material_counts.items(), key=lambda x: x[1])[0]
+                primary_material_uri = MATERIAL[primary_material.replace(" ", "_")]
+                g.add((recipe_uri, MC.primaryMaterial, primary_material_uri))
+
+    # Add tool classifications
+    farming_tools = ["Hoe", "Shovel"]
+    mining_tools = ["Pickaxe", "Axe"]
+
+    # Add material prefixes for tools
+    material_prefixes = ["Wooden", "Stone", "Iron", "Golden", "Diamond", "Netherite"]
+
+    # Create and classify all tool variants
+    for material in material_prefixes:
+        # Add farming tools
+        for tool in farming_tools:
+            tool_name = f"{material}_{tool}"
+            tool_uri = TOOL[tool_name]
+            g.add((tool_uri, RDF.type, MC.Tool))
+            g.add((tool_uri, RDF.type, MC.FarmingTool))
+            g.add((tool_uri, RDFS.label, Literal(f"{material} {tool}")))
+
+        # Add mining tools
+        for tool in mining_tools:
+            tool_name = f"{material}_{tool}"
+            tool_uri = TOOL[tool_name]
+            g.add((tool_uri, RDF.type, MC.Tool))
+            g.add((tool_uri, RDF.type, MC.MiningTool))
+            g.add((tool_uri, RDFS.label, Literal(f"{material} {tool}")))
+
+    return g, {}
+
+
+def save_ontology(g, format="xml", filename="minecraft.owl"):
+    g.serialize(destination=filename, format=format)
+
+
+def get_armor_queries():
+    return {
         "Find complete armor sets and their protection values": """
         SELECT DISTINCT ?set_name ?piece_name ?protection ?durability
         WHERE {
@@ -415,6 +506,11 @@ def create_minecraft_ontology():
         }
         ORDER BY ?armor_name ?material_name
         """,
+    }
+
+
+def get_tool_queries():
+    return {
         "List all tools with their durability and crafting materials": """
         SELECT DISTINCT ?tool_name ?durability ?material_name ?count
         WHERE {
@@ -428,60 +524,147 @@ def create_minecraft_ontology():
         }
         ORDER BY ?tool_name
         """,
-        "Find ores and the biomes they are found in": """
-        SELECT DISTINCT ?ore_name ?biome_name
+        "List all swords with their combat stats": """
+        SELECT DISTINCT ?sword_name ?durability ?attack_damage ?attack_speed ?dps
         WHERE {
-            ?ore a mc:Ore ;
-                 rdfs:label ?ore_name ;
-                 mc:foundInBiome ?biome .
-            ?biome rdfs:label ?biome_name .
+            ?sword a mc:CombatTool ;
+                   rdfs:label ?sword_name ;
+                   mc:hasDurability ?durability .
+            OPTIONAL { ?sword mc:hasAttackDamage ?attack_damage }
+            OPTIONAL { ?sword mc:hasAttackSpeed ?attack_speed }
+            OPTIONAL { ?sword mc:hasDPS ?dps }
+            FILTER(CONTAINS(LCASE(?sword_name), "sword"))
         }
-        ORDER BY ?ore_name ?biome_name
+        ORDER BY ?sword_name
         """,
     }
 
-    return g, queries
+
+def get_mining_queries():
+    return {
+        "Find Diamond Pickaxe durability": """
+        SELECT ?durability
+        WHERE {
+            ?tool a mc:Tool ;
+                  rdfs:label "Diamond Pickaxe" ;
+                  mc:hasDurability ?durability .
+        }
+        """
+    }
 
 
-def save_ontology(g, format="xml", filename="minecraft.owl"):
-    g.serialize(destination=filename, format=format)
+# Get required tool for every ore
+def get_ore_queries():
+    return {
+        "Find required tool for every ore": """
+        SELECT DISTINCT ?ore_name ?tool_name
+        WHERE {
+            ?ore a mc:Ore ;
+                 rdfs:label ?ore_name ;
+                 mc:requiresPickaxe ?tool .
+            ?tool rdfs:label ?tool_name .
+        }
+        """,
+    }
+
+
+def can_be_mined_with(g, tool_name, ore_name):
+    query = f"""
+    SELECT ?required_tier (STR(?tool_name) AS ?tool_tier) (IF(?tool_value >= ?req_value, "Yes", "No") as ?can_mine)
+    WHERE {{
+        # Get ore and required tool information
+        ?ore a mc:Ore ;
+             rdfs:label "{ore_name}" ;
+             mc:requiresPickaxe ?required_tool .
+        ?required_tool rdfs:label ?required_tier .
+        
+        # Get tool information
+        BIND("{tool_name}" AS ?tool_name)
+        
+        # Define tool tiers mapping
+        VALUES (?pickaxe_name ?tool_value) {{
+            ("Wooden Pickaxe"    1)
+            ("Stone Pickaxe"     2)
+            ("Iron Pickaxe"      3)
+            ("Golden Pickaxe"    2)  # Golden tools are equivalent to Stone
+            ("Diamond Pickaxe"   4)
+            ("Netherite Pickaxe" 5)
+        }}
+        
+        # Get required tier value
+        VALUES (?req_pickaxe ?req_value) {{
+            ("Wooden Pickaxe"    1)
+            ("Stone Pickaxe"     2)
+            ("Iron Pickaxe"      3)
+            ("Diamond Pickaxe"   4)
+            ("Netherite Pickaxe" 5)
+        }}
+        
+        # Match the labels
+        FILTER(?pickaxe_name = ?tool_name)
+        FILTER(?req_pickaxe = ?required_tier)
+    }}
+    """
+
+    return {f"Can {tool_name} mine {ore_name}?": query}
+
+
+def execute_query(g, description, query):
+    print(f"\n{'='*80}")
+    print(f"Query: {description}")
+    print("=" * 80)
+
+    results = g.query(query)
+    columns = results.vars
+
+    # Calculate> column widths
+    widths = {col: len(str(col)) for col in columns}
+    for row in results:
+        for col, value in zip(columns, row):
+            widths[col] = max(widths[col], len(str(value)))
+
+    # Print header
+    header = " | ".join(f"{col:^{widths[col]}}" for col in columns)
+    print("\n" + header)
+    print("-" * len(header))
+
+    # Print rows
+    for row in results:
+        formatted_row = " | ".join(
+            f"{str(value):^{widths[col]}}" for col, value in zip(columns, row)
+        )
+        print(formatted_row)
+
+    print(f"\nTotal results: {len(list(results))}\n")
 
 
 def main():
     # Create and save the ontology
-    g, queries = create_minecraft_ontology()
+    g, _ = create_minecraft_ontology()
     save_ontology(g)
 
-    # Execute and format query results
-    for description, query in queries.items():
-        print(f"\n{'='*80}")
-        print(f"Query: {description}")
-        print("=" * 80)
+    print("\nMinecraft Ontology Analysis")
+    print("=" * 80)
 
-        results = g.query(query)
+    # Print ontology statistics
+    print(f"\nTotal triples: {len(g)}")
+    print(f"Total classes: {len(list(g.subjects(RDF.type, RDFS.Class)))}")
+    print(
+        f"Total properties: {len(list(g.subjects(RDF.type, OWL.ObjectProperty | OWL.DatatypeProperty)))}"
+    )
 
-        # Get column names from the query results
-        columns = results.vars
+    # Combine all queries
+    all_queries = {}
+    all_queries.update(get_armor_queries())
+    all_queries.update(get_tool_queries())
+    all_queries.update(get_ore_queries())
+    all_queries.update(can_be_mined_with(g, "Golden Pickaxe", "Diamond"))
+    all_queries.update(can_be_mined_with(g, "Stone Pickaxe", "Diamond"))
+    all_queries.update(can_be_mined_with(g, "Iron Pickaxe", "Diamond"))
 
-        # Calculate column widths
-        widths = {col: len(str(col)) for col in columns}
-        for row in results:
-            for col, value in zip(columns, row):
-                widths[col] = max(widths[col], len(str(value)))
-
-        # Print header
-        header = " | ".join(f"{col:^{widths[col]}}" for col in columns)
-        print("\n" + header)
-        print("-" * len(header))
-
-        # Print rows
-        for row in results:
-            formatted_row = " | ".join(
-                f"{str(value):^{widths[col]}}" for col, value in zip(columns, row)
-            )
-            print(formatted_row)
-
-        print(f"\nTotal results: {len(list(results))}\n")
+    # Execute all queries
+    for description, query in all_queries.items():
+        execute_query(g, description, query)
 
 
 if __name__ == "__main__":
