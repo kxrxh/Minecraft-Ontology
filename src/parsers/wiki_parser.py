@@ -1,8 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
-import json
 import time
 import re
+import os
+from . import DATA_DIR
 
 
 class WikiParser:
@@ -281,19 +282,6 @@ class WikiParser:
 
         return recipes
 
-    def save_data_to_json(
-        self, recipes: dict, filename: str = "tool_recipes.json"
-    ) -> None:
-        """Saves the recipes dictionary to a JSON file.
-
-        Args:
-            recipes: Dictionary containing recipe data to save
-            filename: Name of the JSON file to save to. Defaults to "tool_recipes.json"
-        """
-        with open(filename, "w", encoding="utf-8") as f:
-            json.dump(recipes, f, ensure_ascii=False, indent=4)
-        print(f"Saved recipes to {filename}")
-
     def parse_ore_properties(self, ore_page_html):
         """Extracts ore properties like hardness, blast resistance, tool requirements."""
         soup = BeautifulSoup(ore_page_html, "html.parser")
@@ -505,11 +493,14 @@ class WikiParser:
 
     def parse_sword_stats_from_file(self, html_file="sword_damage.html"):
         """Extract sword statistics from the sword_damage.html file."""
+        # Construct the full path to the sword_damage.html file
+        html_file_path = os.path.join(DATA_DIR, html_file)
+        
         try:
-            with open(html_file, "r", encoding="utf-8") as f:
+            with open(html_file_path, "r", encoding="utf-8") as f:
                 html_content = f.read()
         except FileNotFoundError:
-            print(f"Error: {html_file} not found")
+            print(f"Error: {html_file_path} not found")
             return {}
 
         soup = BeautifulSoup(html_content, "html.parser")

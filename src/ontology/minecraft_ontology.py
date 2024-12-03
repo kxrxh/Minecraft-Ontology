@@ -3,6 +3,8 @@ from rdflib.namespace import XSD
 import json
 import os
 import sys
+from src.parsers import PROCESSED_DATA_DIR, DATA_DIR
+from src.utils.file_utils import load_json_data
 
 # Create namespaces
 MC = Namespace("http://minecraft.example.org/")
@@ -13,18 +15,6 @@ BIOME = Namespace("http://minecraft.example.org/biome/")
 LAYER = Namespace("http://minecraft.example.org/layer/")
 RECIPE = Namespace("http://minecraft.example.org/recipe/")
 ARMOR = Namespace("http://minecraft.example.org/armor/")
-
-
-def load_json_data(filepath):
-    if not os.path.exists(filepath):
-        print(f"Error: The file '{filepath}' does not exist.", file=sys.stderr)
-        sys.exit(1)
-    try:
-        with open(filepath, "r") as f:
-            return json.load(f)
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON from '{filepath}': {e}", file=sys.stderr)
-        sys.exit(1)
 
 
 def create_minecraft_ontology():
@@ -139,7 +129,7 @@ def create_minecraft_ontology():
     g.add((MC.hasDPS, RDFS.range, XSD.float))
 
     # Load ore data from JSON
-    ores_data = load_json_data("ore_data.json")
+    ores_data = load_json_data(PROCESSED_DATA_DIR, "ore_data.json")
 
     # Add ore information
     for ore_name, ore_data in ores_data.items():
@@ -173,7 +163,7 @@ def create_minecraft_ontology():
         g.add((ore_uri, MC.foundInLayer, layer_uri))
 
     # Load tool data from JSON
-    tools_data = load_json_data("tool_recipes.json")
+    tools_data = load_json_data(PROCESSED_DATA_DIR, "tool_recipes.json")
 
     # Add tool and recipe information
     for tool_name, tool_info in tools_data.items():
@@ -235,7 +225,7 @@ def create_minecraft_ontology():
                 g.add((recipe_uri, MC.primaryMaterial, primary_material_uri))
 
     # Load armor data from JSON
-    armor_data = load_json_data("armor_data.json")
+    armor_data = load_json_data(PROCESSED_DATA_DIR, "armor_data.json")
 
     # Add armor information
     for armor_name, armor_info in armor_data.items():
@@ -358,7 +348,7 @@ def create_minecraft_ontology():
                     break
 
     # Load sword data from JSON
-    sword_data = load_json_data("sword_recipes.json")
+    sword_data = load_json_data(PROCESSED_DATA_DIR, "sword_recipes.json")
 
     # Add sword information
     for sword_name, sword_info in sword_data.items():
@@ -477,7 +467,10 @@ def create_minecraft_ontology():
 
 
 def save_ontology(g, format="xml", filename="minecraft.owl"):
-    g.serialize(destination=filename, format=format)
+    """Save the ontology to the data directory."""
+    output_path = os.path.join(DATA_DIR, filename)
+    g.serialize(destination=output_path, format=format)
+    print(f"Saved ontology to {output_path}")
 
 
 def get_armor_queries():
