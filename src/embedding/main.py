@@ -239,31 +239,33 @@ def print_predictions(predictions, top_k=5, relation=None):
     """Print the top K predictions with their scores."""
     print(f"\nTop {top_k} predictions:")
     print("-" * 50)
-    
+
     if relation == "isUsedIn":
         # Group by category
         tools = []
         armor = []
         other = []
-        
+
         for entity, score in predictions[:top_k]:
             if any(t in entity for t in ["Sword", "Pickaxe", "Axe", "Shovel"]):
                 tools.append((entity, score))
-            elif any(a in entity for a in ["Helmet", "Chestplate", "Leggings", "Boots"]):
+            elif any(
+                a in entity for a in ["Helmet", "Chestplate", "Leggings", "Boots"]
+            ):
                 armor.append((entity, score))
             else:
                 other.append((entity, score))
-                
+
         if tools:
             print("\nTools:")
             for entity, score in tools:
                 print(f"{entity:<40} {score:.4f}")
-                
+
         if armor:
             print("\nArmor:")
             for entity, score in armor:
                 print(f"{entity:<40} {score:.4f}")
-                
+
         if other:
             print("\nOther:")
             for entity, score in other:
@@ -298,7 +300,6 @@ if __name__ == "__main__":
         "isPartOfArmorSet",
     )
     print_predictions(predictions)
-
 
     print("\nНа какой высоте можно найти алмазы (Diamond ore layer range):")
     predictions = predict_relations(
