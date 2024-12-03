@@ -59,10 +59,6 @@ def create_minecraft_ontology():
     g.add((MC.usesMaterial, RDFS.domain, MC.Recipe))
     g.add((MC.usesMaterial, RDFS.range, MC.Material))
 
-    g.add((MC.materialCount, RDF.type, OWL.DatatypeProperty))
-    g.add((MC.materialCount, RDFS.domain, MC.Recipe))
-    g.add((MC.materialCount, RDFS.range, XSD.integer))
-
     g.add((MC.primaryMaterial, RDF.type, OWL.ObjectProperty))
     g.add((MC.primaryMaterial, RDFS.domain, MC.Recipe))
     g.add((MC.primaryMaterial, RDFS.range, MC.Material))
@@ -214,10 +210,17 @@ def create_minecraft_ontology():
                 g.add((material_uri, RDF.type, MC.Material))
                 g.add((material_uri, RDFS.label, Literal(material)))
 
-                # Connect recipe to material
-                g.add((recipe_uri, MC.usesMaterial, material_uri))
+                # Create a specific property for each material count
+                material_count_property = MC[f"{material.replace(' ', '_')}_Count"]
+                g.add((material_count_property, RDF.type, OWL.DatatypeProperty))
+                g.add((material_count_property, RDFS.domain, recipe_uri))
+                g.add((material_count_property, RDFS.range, XSD.integer))
                 g.add(
-                    (recipe_uri, MC.materialCount, Literal(count, datatype=XSD.integer))
+                    (
+                        recipe_uri,
+                        material_count_property,
+                        Literal(count, datatype=XSD.integer),
+                    )
                 )
 
             # Find primary material (most used in recipe)
@@ -267,10 +270,17 @@ def create_minecraft_ontology():
                 g.add((material_uri, RDF.type, MC.Material))
                 g.add((material_uri, RDFS.label, Literal(material)))
 
-                # Connect recipe to material
-                g.add((recipe_uri, MC.usesMaterial, material_uri))
+                # Create a specific property for each material count
+                material_count_property = MC[f"{material.replace(' ', '_')}_Count"]
+                g.add((material_count_property, RDF.type, OWL.DatatypeProperty))
+                g.add((material_count_property, RDFS.domain, recipe_uri))
+                g.add((material_count_property, RDFS.range, XSD.integer))
                 g.add(
-                    (recipe_uri, MC.materialCount, Literal(count, datatype=XSD.integer))
+                    (
+                        recipe_uri,
+                        material_count_property,
+                        Literal(count, datatype=XSD.integer),
+                    )
                 )
 
                 # Find primary material (most used in recipe)
@@ -428,17 +438,26 @@ def create_minecraft_ontology():
                 g.add((material_uri, RDF.type, MC.Material))
                 g.add((material_uri, RDFS.label, Literal(material)))
 
-                # Connect recipe to material
-                g.add((recipe_uri, MC.usesMaterial, material_uri))
+                # Create a specific property for each material count
+                material_count_property = MC[f"{material.replace(' ', '_')}_Count"]
+                g.add((material_count_property, RDF.type, OWL.DatatypeProperty))
+                g.add((material_count_property, RDFS.domain, recipe_uri))
+                g.add((material_count_property, RDFS.range, XSD.integer))
                 g.add(
-                    (recipe_uri, MC.materialCount, Literal(count, datatype=XSD.integer))
+                    (
+                        recipe_uri,
+                        material_count_property,
+                        Literal(count, datatype=XSD.integer),
+                    )
                 )
 
-            # Find primary material (most used in recipe)
-            if material_counts:
-                primary_material = max(material_counts.items(), key=lambda x: x[1])[0]
-                primary_material_uri = MATERIAL[primary_material.replace(" ", "_")]
-                g.add((recipe_uri, MC.primaryMaterial, primary_material_uri))
+                # Find primary material (most used in recipe)
+                if material_counts:
+                    primary_material = max(material_counts.items(), key=lambda x: x[1])[
+                        0
+                    ]
+                    primary_material_uri = MATERIAL[primary_material.replace(" ", "_")]
+                    g.add((recipe_uri, MC.primaryMaterial, primary_material_uri))
 
     # Add tool classifications
     farming_tools = ["Hoe", "Shovel"]
@@ -515,19 +534,13 @@ def main():
     # Print ontology statistics
     print(f"\nTotal triples: {len(g)}")
     print(f"Total classes: {len(list(g.subjects(RDF.type, RDFS.Class)))}")
-    print(
-        f"Total properties: {len(list(g.subjects(RDF.type, OWL.ObjectProperty | OWL.DatatypeProperty)))}"
-    )
+
+    object_properties = len(list(g.subjects(RDF.type, OWL.ObjectProperty)))
+    datatype_properties = len(list(g.subjects(RDF.type, OWL.DatatypeProperty)))
+    print(f"Total properties: {object_properties + datatype_properties}")
 
     # Combine all queries
     all_queries = {}
-    # all_queries.update(get_armor_queries())
-    # all_queries.update(get_tool_queries())
-    # all_queries.update(get_ore_queries())
-    # all_queries.update(can_be_mined_with("Golden Pickaxe", "Diamond"))
-    # all_queries.update(can_be_mined_with("Stone Pickaxe", "Diamond"))
-    # all_queries.update(can_be_mined_with("Iron Pickaxe", "Diamond"))
-    # all_queries.update(get_recipe_for("Wooden Sword"))
     all_queries.update(get_competence_queries())
 
     # Execute all queries
