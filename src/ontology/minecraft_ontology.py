@@ -2,9 +2,11 @@ from rdflib import OWL, Graph, Literal, RDF, RDFS, Namespace
 from rdflib.namespace import XSD
 import json
 import os
-import sys
 from src.parsers import PROCESSED_DATA_DIR, DATA_DIR
 from src.utils.file_utils import load_json_data
+from src.ontology.minecraft_queries import (
+    get_competence_queries,
+)
 
 # Create namespaces
 MC = Namespace("http://minecraft.example.org/")
@@ -473,147 +475,6 @@ def save_ontology(g, format="xml", filename="minecraft.owl"):
     print(f"Saved ontology to {output_path}")
 
 
-def get_armor_queries():
-    return {
-        "Find complete armor sets and their protection values": """
-        SELECT DISTINCT ?set_name ?piece_name ?protection ?durability
-        WHERE {
-            ?armor_set a mc:ArmorSet ;
-                      rdfs:label ?set_name .
-            ?piece mc:isPartOfArmorSet ?armor_set ;
-                   rdfs:label ?piece_name ;
-                   mc:hasProtectionValue ?protection ;
-                   mc:hasBaseDurability ?durability .
-        }
-        ORDER BY ?set_name DESC(?protection)
-        """,
-        "Find armor recipes and their material requirements": """
-        SELECT DISTINCT ?armor_name ?material_name ?count
-        WHERE {
-            ?armor a mc:Armor ;
-                   rdfs:label ?armor_name ;
-                   mc:hasRecipe ?recipe .
-            ?recipe mc:usesMaterial ?material ;
-                    mc:materialCount ?count .
-            ?material rdfs:label ?material_name .
-        }
-        ORDER BY ?armor_name ?material_name
-        """,
-    }
-
-
-def get_tool_queries():
-    return {
-        "List all tools with their durability and crafting materials": """
-        SELECT DISTINCT ?tool_name ?durability ?material_name ?count
-        WHERE {
-            ?tool a mc:Tool ;
-                  rdfs:label ?tool_name ;
-                  mc:hasDurability ?durability ;
-                  mc:hasRecipe ?recipe .
-            ?recipe mc:usesMaterial ?material ;
-                    mc:materialCount ?count .
-            ?material rdfs:label ?material_name .
-        }
-        ORDER BY ?tool_name
-        """,
-        "List all swords with their combat stats": """
-        SELECT DISTINCT ?sword_name ?durability ?attack_damage ?attack_speed ?dps
-        WHERE {
-            ?sword a mc:CombatTool ;
-                   rdfs:label ?sword_name ;
-                   mc:hasDurability ?durability .
-            OPTIONAL { ?sword mc:hasAttackDamage ?attack_damage }
-            OPTIONAL { ?sword mc:hasAttackSpeed ?attack_speed }
-            OPTIONAL { ?sword mc:hasDPS ?dps }
-            FILTER(CONTAINS(LCASE(?sword_name), "sword"))
-        }
-        ORDER BY ?sword_name
-        """,
-    }
-
-
-def get_mining_queries():
-    return {
-        "Find Diamond Pickaxe durability": """
-        SELECT ?durability
-        WHERE {
-            ?tool a mc:Tool ;
-                  rdfs:label "Diamond Pickaxe" ;
-                  mc:hasDurability ?durability .
-        }
-        """
-    }
-
-
-# Get required tool for every ore
-def get_ore_queries():
-    return {
-        "Find required tool for every ore": """
-        SELECT DISTINCT ?ore_name ?tool_name
-        WHERE {
-            ?ore a mc:Ore ;
-                 rdfs:label ?ore_name ;
-                 mc:requiresPickaxe ?tool .
-            ?tool rdfs:label ?tool_name .
-        }
-        """,
-    }
-
-
-def can_be_mined_with(g, tool_name, ore_name):
-    query = f"""
-    SELECT ?required_tier (STR(?tool_name) AS ?tool_tier) (IF(?tool_value >= ?req_value, "Yes", "No") as ?can_mine)
-    WHERE {{
-        # Get ore and required tool information
-        ?ore a mc:Ore ;
-             rdfs:label "{ore_name}" ;
-             mc:requiresPickaxe ?required_tool .
-        ?required_tool rdfs:label ?required_tier .
-        
-        # Get tool information
-        BIND("{tool_name}" AS ?tool_name)
-        
-        # Define tool tiers mapping
-        VALUES (?pickaxe_name ?tool_value) {{
-            ("Wooden Pickaxe"    1)
-            ("Stone Pickaxe"     2)
-            ("Iron Pickaxe"      3)
-            ("Golden Pickaxe"    2)  # Golden tools are equivalent to Stone
-            ("Diamond Pickaxe"   4)
-            ("Netherite Pickaxe" 5)
-        }}
-        
-        # Get required tier value
-        VALUES (?req_pickaxe ?req_value) {{
-            ("Wooden Pickaxe"    1)
-            ("Stone Pickaxe"     2)
-            ("Iron Pickaxe"      3)
-            ("Diamond Pickaxe"   4)
-            ("Netherite Pickaxe" 5)
-        }}
-        
-        # Match the labels
-        FILTER(?pickaxe_name = ?tool_name)
-        FILTER(?req_pickaxe = ?required_tier)
-    }}
-    """
-
-    return {f"Can {tool_name} mine {ore_name}?": query}
-
-
-def get_recipe_for(g, tool_name):
-    query = f"""
-    SELECT ?recipe ?grid
-    WHERE {{
-        ?tool rdfs:label "{tool_name}" ;
-              mc:hasRecipe ?recipe .
-        ?recipe mc:recipeGrid ?grid .
-    }}
-    """
-    return {f"Get recipe for {tool_name}": query}
-
-
 def execute_query(g, description, query):
     print(f"\n{'='*80}")
     print(f"Query: {description}")
@@ -660,13 +521,14 @@ def main():
 
     # Combine all queries
     all_queries = {}
-    all_queries.update(get_armor_queries())
-    all_queries.update(get_tool_queries())
-    all_queries.update(get_ore_queries())
-    all_queries.update(can_be_mined_with(g, "Golden Pickaxe", "Diamond"))
-    all_queries.update(can_be_mined_with(g, "Stone Pickaxe", "Diamond"))
-    all_queries.update(can_be_mined_with(g, "Iron Pickaxe", "Diamond"))
-    all_queries.update(get_recipe_for(g, "Wooden Sword"))
+    # all_queries.update(get_armor_queries())
+    # all_queries.update(get_tool_queries())
+    # all_queries.update(get_ore_queries())
+    # all_queries.update(can_be_mined_with("Golden Pickaxe", "Diamond"))
+    # all_queries.update(can_be_mined_with("Stone Pickaxe", "Diamond"))
+    # all_queries.update(can_be_mined_with("Iron Pickaxe", "Diamond"))
+    # all_queries.update(get_recipe_for("Wooden Sword"))
+    all_queries.update(get_competence_queries())
 
     # Execute all queries
     for description, query in all_queries.items():
