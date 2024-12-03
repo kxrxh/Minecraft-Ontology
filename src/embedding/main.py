@@ -5,8 +5,9 @@ import numpy as np
 from src.ontology.minecraft_ontology import create_minecraft_ontology
 
 # Проверяем доступность CUDA
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
+
 
 class ComplExModel(nn.Module):
     def __init__(self, num_entities, num_relations, embedding_dim, dropout=0.2):
@@ -17,7 +18,7 @@ class ComplExModel(nn.Module):
         self.emb_e_img = nn.Embedding(num_entities, embedding_dim)
         self.emb_rel_real = nn.Embedding(num_relations, embedding_dim)
         self.emb_rel_img = nn.Embedding(num_relations, embedding_dim)
-        
+
         # Инициализация весов
         nn.init.xavier_uniform_(self.emb_e_real.weight)
         nn.init.xavier_uniform_(self.emb_e_img.weight)
@@ -41,29 +42,32 @@ class ComplExModel(nn.Module):
 
         # ComplEx scoring function
         score = torch.sum(
-            rel_real * e1_real * e2_real +
-            rel_real * e1_img * e2_img +
-            rel_img * e1_real * e2_img -
-            rel_img * e1_img * e2_real,
-            dim=1
+            rel_real * e1_real * e2_real
+            + rel_real * e1_img * e2_img
+            + rel_img * e1_real * e2_img
+            - rel_img * e1_img * e2_real,
+            dim=1,
         )
         return score
 
-def create_minecraft_embeddings(embedding_dim=150, num_epochs=500, batch_size=64, lr=0.0005):
+
+def create_minecraft_embeddings(
+    embedding_dim=150, num_epochs=1000, batch_size=64, lr=0.0005
+):
     # Получаем граф
     g, _ = create_minecraft_ontology()
-    
+
     # Конвертируем граф в тройки
     triples = []
     entities = set()
     relations = set()
-    
+
     for s, p, o in g:
         # Конвертируем URI/Literals в строки
-        subject = str(s).split('/')[-1]
-        predicate = str(p).split('/')[-1]
-        object_ = str(o).split('/')[-1] if '#' not in str(o) else str(o).split('#')[-1]
-        
+        subject = str(s).split("/")[-1]
+        predicate = str(p).split("/")[-1]
+        object_ = str(o).split("/")[-1] if "#" not in str(o) else str(o).split("#")[-1]
+
         triples.append([subject, predicate, object_])
         entities.add(subject)
         entities.add(object_)
@@ -72,79 +76,75 @@ def create_minecraft_embeddings(embedding_dim=150, num_epochs=500, batch_size=64
     # Создаем словари для маппинга
     entity_to_idx = {ent: idx for idx, ent in enumerate(entities)}
     relation_to_idx = {rel: idx for idx, rel in enumerate(relations)}
-    
+
     # Конвертируем тройки в индексы
     indexed_triples = [
         [entity_to_idx[t[0]], relation_to_idx[t[1]], entity_to_idx[t[2]]]
         for t in triples
     ]
-    
+
     # Конвертируем в тензор и перемещаем на GPU
     triples_tensor = torch.LongTensor(indexed_triples).to(device)
-    
+
     # Создаем модель и перемещаем на GPU
     model = ComplExModel(
         num_entities=len(entities),
         num_relations=len(relations),
-        embedding_dim=embedding_dim
+        embedding_dim=embedding_dim,
     ).to(device)
-    
+
     # Оптимизатор и функция потерь
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.BCEWithLogitsLoss()
-    
+
     # Обучение модели
     model.train()
     for epoch in range(num_epochs):
         # Перемешиваем данные
         indices = torch.randperm(len(triples_tensor), device=device)
         total_loss = 0
-        
+
         # Батчи
         for i in range(0, len(triples_tensor), batch_size):
-            batch_indices = indices[i:i+batch_size]
+            batch_indices = indices[i : i + batch_size]
             batch = triples_tensor[batch_indices]
-            
+
             # Позитивные примеры
-            pos_scores = model(
-                batch[:, 0],
-                batch[:, 1],
-                batch[:, 2]
-            )
-            
+            pos_scores = model(batch[:, 0], batch[:, 1], batch[:, 2])
+
             # Создаем негативные примеры (corrupted triples)
             neg_batch = batch.clone()
             # Случайно заменяем либо субъект, либо объект
             corrupt_idx = torch.randint(2, (len(batch),), device=device) * 2  # 0 или 2
             random_entities = torch.randint(len(entities), (len(batch),), device=device)
-            neg_batch[torch.arange(len(batch), device=device), corrupt_idx] = random_entities
-            
-            # Негативные скоры
-            neg_scores = model(
-                neg_batch[:, 0],
-                neg_batch[:, 1],
-                neg_batch[:, 2]
+            neg_batch[torch.arange(len(batch), device=device), corrupt_idx] = (
+                random_entities
             )
-            
+
+            # Негативные скоры
+            neg_scores = model(neg_batch[:, 0], neg_batch[:, 1], neg_batch[:, 2])
+
             # Вычисляем loss
-            labels = torch.cat([
-                torch.ones_like(pos_scores, device=device),
-                torch.zeros_like(neg_scores, device=device)
-            ])
+            labels = torch.cat(
+                [
+                    torch.ones_like(pos_scores, device=device),
+                    torch.zeros_like(neg_scores, device=device),
+                ]
+            )
             scores = torch.cat([pos_scores, neg_scores])
             loss = criterion(scores, labels)
-            
+
             # Обратное распространение
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            
+
             total_loss += loss.item()
-        
+
         if (epoch + 1) % 10 == 0:
             avg_loss = total_loss / (len(triples_tensor) / batch_size)
-            print(f'Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f}')
-    
+            print(f"Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f}")
+
     # Получаем финальные эмбеддинги
     model.eval()
     with torch.no_grad():
@@ -155,41 +155,94 @@ def create_minecraft_embeddings(embedding_dim=150, num_epochs=500, batch_size=64
             real = model.emb_e_real(idx_tensor).cpu().numpy()[0]
             img = model.emb_e_img(idx_tensor).cpu().numpy()[0]
             entity_embeddings[entity] = np.concatenate([real, img])
-            
+
         relation_embeddings = {}
         for relation, idx in relation_to_idx.items():
             idx_tensor = torch.tensor([idx], device=device)
             real = model.emb_rel_real(idx_tensor).cpu().numpy()[0]
             img = model.emb_rel_img(idx_tensor).cpu().numpy()[0]
             relation_embeddings[relation] = np.concatenate([real, img])
-    
+
     # After training, add evaluation metrics
     print("\nEvaluation Metrics:")
+
+    # Calculate MRR and Hits@N scores
+    from sklearn.model_selection import train_test_split
+
+    def evaluate_triples(model, test_triples, all_entities, k_values=[1, 3, 10]):
+        """
+        Evaluate model performance on test triples
+        Returns MRR and Hits@K scores
+        """
+        ranks = []
+        hits = {k: [] for k in k_values}
+        
+        model.eval()
+        with torch.no_grad():
+            for s, p, o in test_triples:
+                # Create corrupted triples by replacing object
+                corrupted = [(s, p, e) for e in all_entities if e != o]
+                all_triples = [(s, p, o)] + corrupted
+                
+                # Convert to tensors
+                s_idx = torch.tensor([entity_to_idx[t[0]] for t in all_triples], device=device)
+                p_idx = torch.tensor([relation_to_idx[t[1]] for t in all_triples], device=device)
+                o_idx = torch.tensor([entity_to_idx[t[2]] for t in all_triples], device=device)
+                
+                # Get scores
+                scores = model(s_idx, p_idx, o_idx)
+                
+                # Get rank of correct triple
+                correct_score = scores[0]
+                rank = 1 + (scores > correct_score).sum().item()
+                ranks.append(rank)
+                
+                # Calculate hits@k
+                for k in k_values:
+                    hits[k].append(1 if rank <= k else 0)
+        
+        # Calculate metrics
+        mrr = np.mean([1.0/r for r in ranks])
+        hits_at_k = {k: np.mean(hits[k]) for k in k_values}
+        mean_rank = np.mean(ranks)
+        
+        return mean_rank, mrr, hits_at_k
+
+    # Prepare test data
+    test_size = min(10000, len(triples) // 10)  # Use 10% or 10000 triples, whichever is smaller
+    X_train, X_valid = train_test_split(triples, test_size=test_size, random_state=42)
+    all_entities = list(entities)
     
-    # Calculate average distance between different item types
-    item_types = {
-        'Helmet': [k for k in entity_embeddings.keys() if 'Helmet' in k],
-        'Sword': [k for k in entity_embeddings.keys() if 'Sword' in k],
-        'Boots': [k for k in entity_embeddings.keys() if 'Boots' in k],
-        'Recipe': [k for k in entity_embeddings.keys() if 'Recipe' in k]
-    }
+    print("\nValidation metrics:")
+    mean_rank, mrr, hits_at_k = evaluate_triples(model, X_valid, all_entities)
     
-    def calc_avg_distance(items1, items2):
-        if not items1 or not items2:
-            return 0
-        distances = []
-        for i1 in items1:
-            for i2 in items2:
-                dist = np.linalg.norm(entity_embeddings[i1] - entity_embeddings[i2])
-                distances.append(dist)
-        return np.mean(distances)
+    print(f"Mean Rank: {mean_rank:.2f}")
+    print(f"Mean Reciprocal Rank: {mrr:.2f}")
+    print(f"Hits@1: {hits_at_k[1]:.2f}")
+    print(f"Hits@3: {hits_at_k[3]:.2f}")
+    print(f"Hits@10: {hits_at_k[10]:.2f}")
     
-    print("\nAverage distances between item types:")
-    for t1 in item_types:
-        for t2 in item_types:
-            if t1 < t2:
-                avg_dist = calc_avg_distance(item_types[t1], item_types[t2])
-                print(f"{t1} vs {t2}: {avg_dist:.3f}")
+    # Link prediction example
+    def predict_links(subject, predicate, top_n=5):
+        """Predict most likely objects for a given subject-predicate pair"""
+        if subject not in entity_to_idx:
+            print(f"Warning: {subject} not found in entities")
+            return []
+            
+        model.eval()
+        with torch.no_grad():
+            # Create all possible triples with this subject-predicate pair
+            all_objects = list(entities)
+            s_idx = torch.tensor([entity_to_idx[subject]] * len(all_objects), device=device)
+            p_idx = torch.tensor([relation_to_idx[predicate]] * len(all_objects), device=device)
+            o_idx = torch.tensor([entity_to_idx[obj] for obj in all_objects], device=device)
+            
+            # Get scores
+            scores = model(s_idx, p_idx, o_idx).cpu().numpy()
+            
+            # Get top N predictions
+            top_indices = np.argsort(scores)[-top_n:][::-1]
+            return [(all_objects[idx], float(scores[idx])) for idx in top_indices]
     
     # Calculate embedding statistics
     all_embeddings = np.array(list(entity_embeddings.values()))
@@ -198,86 +251,58 @@ def create_minecraft_embeddings(embedding_dim=150, num_epochs=500, batch_size=64
     print(f"Std: {np.std(all_embeddings):.3f}")
     print(f"Min: {np.min(all_embeddings):.3f}")
     print(f"Max: {np.max(all_embeddings):.3f}")
-    
-    # Add cosine similarity visualization for specific items
-    def get_most_similar(item_name, n=5):
-        if item_name not in entity_embeddings:
-            print(f"Warning: {item_name} not found in embeddings")
-            return []
-        item_emb = entity_embeddings[item_name]
-        similarities = {}
-        for ent, emb in entity_embeddings.items():
-            if ent != item_name:
-                sim = np.dot(item_emb, emb) / (np.linalg.norm(item_emb) * np.linalg.norm(emb))
-                similarities[ent] = sim
-        return sorted(similarities.items(), key=lambda x: x[1], reverse=True)[:n]
-    
-    # Print some entity statistics first
-    print("\nEntity counts:")
-    entity_types = {
-        'Helmet': len([k for k in entity_embeddings.keys() if 'Helmet' in k]),
-        'Sword': len([k for k in entity_embeddings.keys() if 'Sword' in k]),
-        'Boots': len([k for k in entity_embeddings.keys() if 'Boots' in k]),
-        'Recipe': len([k for k in entity_embeddings.keys() if 'Recipe' in k])
-    }
-    for type_name, count in entity_types.items():
-        print(f"{type_name}: {count}")
-    
-    print("\nSample of entity names:")
-    sample_entities = list(entity_embeddings.keys())[:5]
-    for entity in sample_entities:
-        print(entity)
-    
-    # Try to find similar items based on what's actually in our embeddings
-    example_items = []
-    # Add a sword if we have one
-    swords = [k for k in entity_embeddings.keys() if 'Sword' in k]
-    if swords:
-        example_items.append(swords[0])
-    # Add a helmet if we have one
-    helmets = [k for k in entity_embeddings.keys() if 'Helmet' in k]
-    if helmets:
-        example_items.append(helmets[0])
-    # Add a recipe if we have one
-    recipes = [k for k in entity_embeddings.keys() if 'Recipe' in k]
-    if recipes:
-        example_items.append(recipes[0])
-    
-    print("\nMost similar items:")
-    for item in example_items:
-        print(f"\nMost similar to {item}:")
-        for similar_item, score in get_most_similar(item):
-            print(f"  {similar_item}: {score:.3f}")
-    
+
+    # Add clustering analysis
+    from sklearn.cluster import KMeans
+
+    # Perform clustering on the embeddings
+    n_clusters = 6  # You can adjust this number
+    clustering = KMeans(n_clusters=n_clusters, random_state=42)
+    entity_vectors = np.array(list(entity_embeddings.values()))
+    clusters = clustering.fit_predict(entity_vectors)
+
+    # Analyze clusters
+    cluster_contents = {i: [] for i in range(n_clusters)}
+    for entity, cluster_id in zip(entity_embeddings.keys(), clusters):
+        cluster_contents[cluster_id].append(entity)
+
+    print("\nCluster Analysis:")
+    for cluster_id, entities in cluster_contents.items():
+        print(f"\nCluster {cluster_id}:")
+        # Print first 5 entities in each cluster
+        for entity in entities[:5]:
+            print(f"  {entity}")
+
     return model, entity_embeddings, relation_embeddings
+
 
 def visualize_embeddings_with_colors(entity_embeddings):
     from sklearn.manifold import TSNE
     import matplotlib.pyplot as plt
-    
+
     # Преобразование эмбеддингов в матрицу
     embeddings_matrix = np.stack(list(entity_embeddings.values()))
-    
+
     # Определение категорий
     categories = {
-        'Recipe': '#ff7f0e',  # Оранжевый для рецептов
-        'Helmet': '#1f77b4',  # Синий для шлемов
-        'Chestplate': '#2ca02c',  # Зеленый для нагрудников
-        'Leggings': '#9467bd',  # Фиолетовый для поножей
-        'Boots': '#8c564b',  # Коричневый для ботинок
-        'Sword': '#d62728',  # Красный для мечей
-        'Axe': '#e377c2',  # Розовый для топоров
-        'Hoe': '#bcbd22',  # Оливковый для мотыг
-        'Other': '#7f7f7f'  # Серый для остального
+        "Recipe": "#ff7f0e",  # Оранжевый для рецептов
+        "Helmet": "#1f77b4",  # Синий для шлемов
+        "Chestplate": "#2ca02c",  # Зеленый для нагрудников
+        "Leggings": "#9467bd",  # Фиолетовый для поножей
+        "Boots": "#8c564b",  # Коричневый для ботинок
+        "Sword": "#d62728",  # Красный для мечей
+        "Axe": "#e377c2",  # Розовый для топоров
+        "Hoe": "#bcbd22",  # Оливковый для мотыг
+        "Other": "#7f7f7f",  # Серый для остального
     }
-    
+
     # Уменьшение размерности до 2D
     tsne = TSNE(n_components=2)
     embeddings_2d = tsne.fit_transform(embeddings_matrix)
-    
+
     # Создаем график
     plt.figure(figsize=(15, 10))
-    
+
     # Отрисовываем точки по категориям
     for category, color in categories.items():
         mask = [category in entity for entity in entity_embeddings.keys()]
@@ -287,26 +312,27 @@ def visualize_embeddings_with_colors(entity_embeddings):
                 embeddings_2d[mask, 1],
                 c=color,
                 label=category,
-                alpha=0.6
+                alpha=0.6,
             )
-    
+
     # Добавляем подписи для некоторых точек
     for i, entity in enumerate(entity_embeddings.keys()):
         if i % 10 == 0:  # Подписываем каждую 10-ю точку
             plt.annotate(entity, (embeddings_2d[i, 0], embeddings_2d[i, 1]))
-    
+
     plt.title("t-SNE visualization of entity embeddings")
     plt.legend()
     plt.show()
 
+
 if __name__ == "__main__":
     model, entity_embeddings, relation_embeddings = create_minecraft_embeddings()
-    
+
     # Пример использования эмбеддингов
     print("\nРазмеры эмбеддингов:")
     print(f"Количество сущностей: {len(entity_embeddings)}")
     print(f"Количество отношений: {len(relation_embeddings)}")
     print(f"Размерность эмбеддинга: {next(iter(entity_embeddings.values())).shape}")
-    
+
     # Визуализация
     visualize_embeddings_with_colors(entity_embeddings)
