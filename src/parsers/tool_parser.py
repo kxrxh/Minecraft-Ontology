@@ -10,7 +10,7 @@ class ToolParser(RecipeParser):
 
         basic_tools = ["axe", "hoe", "pickaxe", "shovel"]
         special_items = ["fishing rod", "flint and steel", "shears", "brush", "spyglass"]
-        material_prefixes = ["wooden", "stone", "iron", "golden", "diamond", "netherite"]
+        material_prefixes = ["wooden", "stone", "iron", "golden", "diamond"]
 
         # Find all links in the page
         for link in soup.find_all("a"):

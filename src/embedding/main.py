@@ -163,6 +163,92 @@ def create_minecraft_embeddings(embedding_dim=150, num_epochs=500, batch_size=64
             img = model.emb_rel_img(idx_tensor).cpu().numpy()[0]
             relation_embeddings[relation] = np.concatenate([real, img])
     
+    # After training, add evaluation metrics
+    print("\nEvaluation Metrics:")
+    
+    # Calculate average distance between different item types
+    item_types = {
+        'Helmet': [k for k in entity_embeddings.keys() if 'Helmet' in k],
+        'Sword': [k for k in entity_embeddings.keys() if 'Sword' in k],
+        'Boots': [k for k in entity_embeddings.keys() if 'Boots' in k],
+        'Recipe': [k for k in entity_embeddings.keys() if 'Recipe' in k]
+    }
+    
+    def calc_avg_distance(items1, items2):
+        if not items1 or not items2:
+            return 0
+        distances = []
+        for i1 in items1:
+            for i2 in items2:
+                dist = np.linalg.norm(entity_embeddings[i1] - entity_embeddings[i2])
+                distances.append(dist)
+        return np.mean(distances)
+    
+    print("\nAverage distances between item types:")
+    for t1 in item_types:
+        for t2 in item_types:
+            if t1 < t2:
+                avg_dist = calc_avg_distance(item_types[t1], item_types[t2])
+                print(f"{t1} vs {t2}: {avg_dist:.3f}")
+    
+    # Calculate embedding statistics
+    all_embeddings = np.array(list(entity_embeddings.values()))
+    print("\nEmbedding Statistics:")
+    print(f"Mean: {np.mean(all_embeddings):.3f}")
+    print(f"Std: {np.std(all_embeddings):.3f}")
+    print(f"Min: {np.min(all_embeddings):.3f}")
+    print(f"Max: {np.max(all_embeddings):.3f}")
+    
+    # Add cosine similarity visualization for specific items
+    def get_most_similar(item_name, n=5):
+        if item_name not in entity_embeddings:
+            print(f"Warning: {item_name} not found in embeddings")
+            return []
+        item_emb = entity_embeddings[item_name]
+        similarities = {}
+        for ent, emb in entity_embeddings.items():
+            if ent != item_name:
+                sim = np.dot(item_emb, emb) / (np.linalg.norm(item_emb) * np.linalg.norm(emb))
+                similarities[ent] = sim
+        return sorted(similarities.items(), key=lambda x: x[1], reverse=True)[:n]
+    
+    # Print some entity statistics first
+    print("\nEntity counts:")
+    entity_types = {
+        'Helmet': len([k for k in entity_embeddings.keys() if 'Helmet' in k]),
+        'Sword': len([k for k in entity_embeddings.keys() if 'Sword' in k]),
+        'Boots': len([k for k in entity_embeddings.keys() if 'Boots' in k]),
+        'Recipe': len([k for k in entity_embeddings.keys() if 'Recipe' in k])
+    }
+    for type_name, count in entity_types.items():
+        print(f"{type_name}: {count}")
+    
+    print("\nSample of entity names:")
+    sample_entities = list(entity_embeddings.keys())[:5]
+    for entity in sample_entities:
+        print(entity)
+    
+    # Try to find similar items based on what's actually in our embeddings
+    example_items = []
+    # Add a sword if we have one
+    swords = [k for k in entity_embeddings.keys() if 'Sword' in k]
+    if swords:
+        example_items.append(swords[0])
+    # Add a helmet if we have one
+    helmets = [k for k in entity_embeddings.keys() if 'Helmet' in k]
+    if helmets:
+        example_items.append(helmets[0])
+    # Add a recipe if we have one
+    recipes = [k for k in entity_embeddings.keys() if 'Recipe' in k]
+    if recipes:
+        example_items.append(recipes[0])
+    
+    print("\nMost similar items:")
+    for item in example_items:
+        print(f"\nMost similar to {item}:")
+        for similar_item, score in get_most_similar(item):
+            print(f"  {similar_item}: {score:.3f}")
+    
     return model, entity_embeddings, relation_embeddings
 
 def visualize_embeddings_with_colors(entity_embeddings):
