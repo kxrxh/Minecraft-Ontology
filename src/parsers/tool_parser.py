@@ -8,25 +8,27 @@ class ToolParser(RecipeParser):
         soup = BeautifulSoup(html_content, "html.parser")
         tool_links = []
 
-        tool_keywords = [
-            "axe", "hoe", "pickaxe", "shovel", "fishing rod",
-            "flint and steel", "shears", "brush", "spyglass",
-        ]
+        basic_tools = ["axe", "hoe", "pickaxe", "shovel"]
+        special_items = ["fishing rod", "flint and steel", "shears", "brush", "spyglass"]
+        material_prefixes = ["wooden", "stone", "iron", "golden", "diamond", "netherite"]
 
         # Find all links in the page
         for link in soup.find_all("a"):
-            name = link.get_text(strip=True)
+            name = link.get_text(strip=True).lower()
             url = link.get("href")
 
-            # Check if the link text contains any tool keywords AND starts with uppercase
-            if (url and 
-                any(keyword in name.lower() for keyword in tool_keywords) and
-                name[0].isupper()):
-                tool_links.append({"name": name, "url": f"{self.base_url}{url}"})
+            if url:
+                # Check for material-prefixed tools
+                if (any(name.startswith(prefix) for prefix in material_prefixes) and
+                    any(tool in name for tool in basic_tools)):
+                    tool_links.append({"name": link.get_text(strip=True), "url": f"{self.base_url}{url}"})
+                # Check for special items
+                elif any(item == name for item in special_items):
+                    tool_links.append({"name": link.get_text(strip=True), "url": f"{self.base_url}{url}"})
 
         # Remove duplicates while preserving order
         seen = set()
-        tool_links = [x for x in tool_links if not (x["name"] in seen or seen.add(x["name"]))]
+        tool_links = [x for x in tool_links if not (x["name"].lower() in seen or seen.add(x["name"].lower()))]
 
         return tool_links
 

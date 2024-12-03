@@ -4,23 +4,23 @@ import os
 from .recipe_parser import RecipeParser
 from . import DATA_DIR
 
+
 class SwordParser(RecipeParser):
     def get_sword_links(self):
         """Return hardcoded sword links."""
         return [
             {"name": "Wooden Sword", "url": f"{self.base_url}/w/Wooden_Sword"},
-            {"name": "Stone Sword", "url": f"{self.base_url}/w/Stone_Sword"}, 
+            {"name": "Stone Sword", "url": f"{self.base_url}/w/Stone_Sword"},
             {"name": "Iron Sword", "url": f"{self.base_url}/w/Iron_Sword"},
             {"name": "Golden Sword", "url": f"{self.base_url}/w/Golden_Sword"},
             {"name": "Diamond Sword", "url": f"{self.base_url}/w/Diamond_Sword"},
-            {"name": "Netherite Sword", "url": f"{self.base_url}/w/Netherite_Sword"},
         ]
 
     def parse_sword_stats_from_file(self, html_file="sword_damage.html"):
         """Extract sword statistics from the sword_damage.html file."""
         # Construct the full path to the sword_damage.html file
         html_file_path = os.path.join(DATA_DIR, html_file)
-        
+
         try:
             with open(html_file_path, "r", encoding="utf-8") as f:
                 html_content = f.read()
@@ -54,7 +54,7 @@ class SwordParser(RecipeParser):
         # Define the stats we want to extract
         stat_rows = {
             "Attack Damage": "attack_damage",
-            "Attack Speed": "attack_speed", 
+            "Attack Speed": "attack_speed",
             "Damage/Second (DPS)": "dps",
             "Durability": "durability",
         }
@@ -117,7 +117,9 @@ class SwordParser(RecipeParser):
             data = self.parse_recipe(sword_page_html)
 
             # Add sword stats from the local file
-            material = clean_sword_name.split()[0]  # Get material name (e.g., "Wooden" from "Wooden Sword")
+            material = clean_sword_name.split()[
+                0
+            ]  # Get material name (e.g., "Wooden" from "Wooden Sword")
             if material in sword_stats:
                 data.update(sword_stats[material])
 

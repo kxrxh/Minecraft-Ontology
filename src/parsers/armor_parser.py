@@ -27,6 +27,7 @@ class ArmorParser(RecipeParser):
                 and any(keyword in name.lower() for keyword in armor_keywords)
                 and len(name.split(" ")) == 2
                 and name[0].isupper()
+                and "netherite" not in name.lower()  # Exclude Netherite armors
             ):
                 armor_links.append({"name": name, "url": f"{self.base_url}{url}"})
 

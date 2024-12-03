@@ -31,6 +31,7 @@ def create_minecraft_ontology():
     g.bind("layer", LAYER)
     g.bind("recipe", RECIPE)
     g.bind("armor", ARMOR)
+
     # Define main classes
     g.add((MC.Tool, RDF.type, RDFS.Class))
     g.add((MC.Ore, RDF.type, RDFS.Class))
@@ -44,15 +45,7 @@ def create_minecraft_ontology():
     g.add((MC.MiningTool, RDFS.subClassOf, MC.Tool))
     g.add((MC.CombatTool, RDFS.subClassOf, MC.Tool))
     g.add((MC.FarmingTool, RDFS.subClassOf, MC.Tool))
-
-    # Add material property relationships
-    g.add((MC.canSmelt, RDF.type, OWL.DatatypeProperty))
-    g.add((MC.canSmelt, RDFS.domain, MC.Material))
-    g.add((MC.canSmelt, RDFS.range, XSD.boolean))
-
-    g.add((MC.smeltsInto, RDF.type, OWL.ObjectProperty))
-    g.add((MC.smeltsInto, RDFS.domain, MC.Material))
-    g.add((MC.smeltsInto, RDFS.range, MC.Material))
+    g.add((MC.SpecialTool, RDFS.subClassOf, MC.Tool))
 
     # Define recipe-related properties
     g.add((MC.usesMaterial, RDF.type, OWL.ObjectProperty))
@@ -64,20 +57,6 @@ def create_minecraft_ontology():
     g.add((MC.primaryMaterial, RDFS.range, MC.Material))
     g.add((MC.primaryMaterial, RDFS.subPropertyOf, MC.usesMaterial))
 
-    # Add armor-specific properties
-    g.add((MC.hasArmorType, RDF.type, OWL.ObjectProperty))
-    g.add((MC.hasArmorType, RDFS.domain, MC.Armor))
-    g.add((MC.hasArmorType, RDFS.range, XSD.string))
-
-    g.add((MC.hasArmorSlot, RDF.type, OWL.DatatypeProperty))
-    g.add((MC.hasArmorSlot, RDFS.domain, MC.Armor))
-    g.add((MC.hasArmorSlot, RDFS.range, XSD.string))
-
-    # Define inverse and functional properties
-
-    # Armor slot relationships (functional - each armor piece goes in exactly one slot)
-    g.add((MC.hasArmorSlot, RDF.type, OWL.FunctionalProperty))
-    g.add((MC.hasArmorSlot, RDF.type, OWL.ObjectProperty))
 
     # Recipe relationships (functional - each item has one primary recipe)
     g.add((MC.hasPrimaryRecipe, RDF.type, OWL.FunctionalProperty))
@@ -165,7 +144,9 @@ def create_minecraft_ontology():
 
     # Add tool and recipe information
     for tool_name, tool_info in tools_data.items():
-        tool_uri = TOOL[tool_name.replace(" ", "_")]
+        # Normalize tool name by removing spaces and converting to title case
+        normalized_tool_name = tool_name.replace(" ", "_").title()
+        tool_uri = TOOL[normalized_tool_name]
         g.add((tool_uri, RDF.type, MC.Tool))
         g.add((tool_uri, RDFS.label, Literal(tool_name)))
 
@@ -180,7 +161,7 @@ def create_minecraft_ontology():
 
         # Add recipe information
         if "crafting" in tool_info and "grid" in tool_info["crafting"]:
-            recipe_uri = RECIPE[tool_name.replace(" ", "_") + "_Recipe"]
+            recipe_uri = MC[tool_name.replace(" ", "_") + "_Recipe"]
             g.add((recipe_uri, RDF.type, MC.Recipe))
             g.add((tool_uri, MC.hasRecipe, recipe_uri))
             g.add((recipe_uri, MC.isRecipeFor, tool_uri))
@@ -211,9 +192,9 @@ def create_minecraft_ontology():
                 g.add((material_uri, RDFS.label, Literal(material)))
 
                 # Create a specific property for each material count
-                material_count_property = MC[f"{material.replace(' ', '_')}_Count"]
+                material_count_property = MC[f"has{material.replace(' ', '')}Count"]
                 g.add((material_count_property, RDF.type, OWL.DatatypeProperty))
-                g.add((material_count_property, RDFS.domain, recipe_uri))
+                g.add((material_count_property, RDFS.domain, MC.Recipe))
                 g.add((material_count_property, RDFS.range, XSD.integer))
                 g.add(
                     (
@@ -242,8 +223,8 @@ def create_minecraft_ontology():
         if "crafting" in armor_info and "grid" in armor_info["crafting"]:
             recipe_uri = RECIPE[armor_name.replace(" ", "_") + "_Recipe"]
             g.add((recipe_uri, RDF.type, MC.Recipe))
-            g.add((armor_uri, MC.hasArmorRecipe, recipe_uri))
-            g.add((recipe_uri, MC.isRecipeForArmor, armor_uri))
+            g.add((armor_uri, MC.hasRecipe, recipe_uri))
+            g.add((recipe_uri, MC.isRecipeFor, armor_uri))
 
             # Process crafting grid
             simplified_grid = []
@@ -273,7 +254,7 @@ def create_minecraft_ontology():
                 # Create a specific property for each material count
                 material_count_property = MC[f"{material.replace(' ', '_')}_Count"]
                 g.add((material_count_property, RDF.type, OWL.DatatypeProperty))
-                g.add((material_count_property, RDFS.domain, recipe_uri))
+                g.add((material_count_property, RDFS.domain, MC.Recipe))
                 g.add((material_count_property, RDFS.range, XSD.integer))
                 g.add(
                     (
@@ -441,7 +422,7 @@ def create_minecraft_ontology():
                 # Create a specific property for each material count
                 material_count_property = MC[f"{material.replace(' ', '_')}_Count"]
                 g.add((material_count_property, RDF.type, OWL.DatatypeProperty))
-                g.add((material_count_property, RDFS.domain, recipe_uri))
+                g.add((material_count_property, RDFS.domain, MC.Recipe))
                 g.add((material_count_property, RDFS.range, XSD.integer))
                 g.add(
                     (
@@ -462,9 +443,10 @@ def create_minecraft_ontology():
     # Add tool classifications
     farming_tools = ["Hoe", "Shovel"]
     mining_tools = ["Pickaxe", "Axe"]
+    special_tools = ["Fishing_Rod", "Flint_and_Steel", "Shears", "Brush", "Spyglass"]
 
     # Add material prefixes for tools
-    material_prefixes = ["Wooden", "Stone", "Iron", "Golden", "Diamond", "Netherite"]
+    material_prefixes = ["Wooden", "Stone", "Iron", "Golden", "Diamond"]
 
     # Create and classify all tool variants
     for material in material_prefixes:
@@ -483,6 +465,13 @@ def create_minecraft_ontology():
             g.add((tool_uri, RDF.type, MC.Tool))
             g.add((tool_uri, RDF.type, MC.MiningTool))
             g.add((tool_uri, RDFS.label, Literal(f"{material} {tool}")))
+
+    # Add special tools
+    for tool in special_tools:
+        tool_uri = TOOL[tool]
+        g.add((tool_uri, RDF.type, MC.Tool))
+        g.add((tool_uri, RDF.type, MC.SpecialTool))
+        g.add((tool_uri, RDFS.label, Literal(tool.replace("_", " "))))
 
     return g, {}
 

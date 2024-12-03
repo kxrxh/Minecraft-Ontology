@@ -7,9 +7,9 @@ VENV_ACTIVATE = $(VENV_BIN)/activate
 # Requirements file
 REQUIREMENTS = requirements.txt
 
-.PHONY: all setup clean run-parsers run-ontology
+.PHONY: all setup clean run-parsers run-ontology run-embeddings
 
-all: setup run-parsers run-ontology
+all: setup run-parsers run-ontology run-embeddings
 
 # Create virtual environment and install dependencies
 setup: $(VENV)/touchfile
@@ -26,6 +26,10 @@ run-parsers:
 # Run the ontology script
 run-ontology:
 	. $(VENV_ACTIVATE) && PYTHONPATH=./src $(PYTHON) -m src.ontology.minecraft_ontology
+
+# Run the embedding script
+run-embeddings:
+	. $(VENV_ACTIVATE) && PYTHONPATH=./src $(PYTHON) -m src.embedding.main
 
 # Clean up virtual environment
 clean:
