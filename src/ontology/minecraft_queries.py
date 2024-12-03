@@ -140,14 +140,19 @@ def get_ore_mining_tools_query(ore_name="Diamond Ore"):
     }
 
 
-def get_item_recipe_query(item_name="Diamond Sword"):
+def get_item_recipe_query(item_name="Diamond Boots"):
     return {
         f"3. What is the recipe for {item_name}?": f"""
         SELECT ?grid
         WHERE {{
-            ?item rdfs:label "{item_name}" ;
-                  mc:hasRecipe ?recipe .
-            ?recipe mc:recipeGrid ?grid .
+            ?item rdfs:label "{item_name}" .
+            {{
+                ?item mc:hasRecipe ?recipe .
+                ?recipe mc:recipeGrid ?grid .
+            }} UNION {{
+                ?item mc:hasArmorRecipe ?recipe .
+                ?recipe mc:recipeGrid ?grid .
+            }}
         }}
         LIMIT 1
         """
@@ -179,15 +184,24 @@ def get_sword_damage_query(sword_name="Diamond Sword"):
     }
 
 
-def get_crafting_requirement_query(item_name="Diamond Sword", material_name="Stick"):
+def get_crafting_requirement_query(
+    item_name="Diamond Sword", material_name="Iron Ingot"
+):
+    material_name = material_name.replace(" ", "_")
+    material_count_property = f"mc:{material_name}_Count"
     return {
         f"6. Is {material_name} required for crafting {item_name}?": f"""
         SELECT (COUNT(?recipe) > 0 as ?is_required)
         WHERE {{
-            ?item rdfs:label "{item_name}" ;
-                  mc:hasRecipe ?recipe .
-            ?recipe mc:usesMaterial ?required_item .
-            ?required_item rdfs:label "{material_name}" .
+            ?item rdfs:label "{item_name}" .
+            {{
+                ?item mc:hasRecipe ?recipe .
+                ?recipe {material_count_property} ?count .
+            }} UNION {{
+                ?item mc:hasArmorRecipe ?recipe .
+                ?recipe {material_count_property} ?count .
+            }}
+            FILTER(?count > 0)
         }}
         """
     }
