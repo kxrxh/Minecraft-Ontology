@@ -58,45 +58,6 @@ def get_tool_queries():
     }
 
 
-def get_mining_queries():
-    return {
-        "Find Diamond Pickaxe durability": """
-        SELECT ?durability
-        WHERE {
-            ?tool a mc:Tool ;
-                  rdfs:label "Diamond Pickaxe" ;
-                  mc:hasDurability ?durability .
-        }
-        """
-    }
-
-
-def get_ore_queries():
-    return {
-        "Find required tool for every ore": """
-        SELECT DISTINCT ?ore_name ?tool_name
-        WHERE {
-            ?ore a mc:Ore ;
-                 rdfs:label ?ore_name ;
-                 mc:requiresPickaxe ?tool .
-            ?tool rdfs:label ?tool_name .
-        }
-        """,
-    }
-
-
-def get_recipe_for(tool_name):
-    query = f"""
-    SELECT ?recipe ?grid
-    WHERE {{
-        ?tool rdfs:label "{tool_name}" ;
-              mc:hasRecipe ?recipe .
-        ?recipe mc:recipeGrid ?grid .
-    }}
-    """
-    return {f"Get recipe for {tool_name}": query}
-
-
 def get_mining_capability_query(tool_name="Diamond Pickaxe", ore_name="Iron"):
     # Remove "Ore" from the name and remove spaces, underscores, and hyphens
     if "Ore" in ore_name:
@@ -276,17 +237,19 @@ def get_sword_dps_query(sword_name="Diamond Sword"):
     }
 
 
-def get_items_crafted_from(material_x="Diamond", material_y="Stick"):
+def get_items_crafted_from(material_x="Iron Ingot", material_y="Stick"):
     material_x = material_x.replace(" ", "_")
     material_y = material_y.replace(" ", "_")
+    material_x_count = f"mc:{material_x}_Count"
+    material_y_count = f"mc:{material_y}_Count"
     return {
         f"10. What items can be crafted from {material_x} and {material_y}?": f"""
-        SELECT DISTINCT ?item_name
+        SELECT DISTINCT ?item_name ?{material_x}_count ?{material_y}_count
         WHERE {{
             ?item rdfs:label ?item_name .
             ?item mc:hasRecipe|mc:hasArmorRecipe ?recipe .
-            ?recipe mc:usesMaterial ?material_x ;
-                   mc:usesMaterial ?material_y .
+            ?recipe {material_x_count} ?{material_x}_count ;
+                   {material_y_count} ?{material_y}_count .
             ?material_x rdfs:label "{material_x}" .
             ?material_y rdfs:label "{material_y}" .
         }}
@@ -308,17 +271,3 @@ def get_competence_queries():
     queries.update(get_sword_dps_query())
     queries.update(get_items_crafted_from())
     return queries
-
-
-def get_material_count_query(item_name, material_name):
-    material_count_property = f"mc:{material_name.replace(' ', '_')}_Count"
-    return {
-        f"Number of {material_name} in {item_name} recipe": f"""
-        SELECT ?count
-        WHERE {{
-            ?item rdfs:label "{item_name}" ;
-                  mc:hasRecipe ?recipe .
-            ?recipe {material_count_property} ?count .
-        }}
-        """
-    }
