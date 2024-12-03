@@ -272,6 +272,27 @@ def get_items_crafted_from(material_x="Iron Ingot", material_y="Stick"):
     }
 
 
+def get_ore_height_range_query(ore_name="Emerald Ore"):
+    # Clean up ore name
+    if "Ore" in ore_name:
+        ore_name = ore_name.replace("Ore", "")
+        ore_name = ore_name.replace(" ", "")
+        ore_name = ore_name.replace("_", "")
+        ore_name = ore_name.replace("-", "")
+    
+    return {
+        f"11. On which layer can {ore_name} be found?": f"""
+        SELECT ?layer_name
+        WHERE {{
+            ?ore a mc:Ore ;
+                 rdfs:label "{ore_name}" ;
+                 mc:foundInLayer ?layer .
+            ?layer rdfs:label ?layer_name .
+        }}
+        """
+    }
+
+
 def get_competence_queries():
     queries = {}
     queries.update(get_mining_capability_query())
@@ -284,4 +305,5 @@ def get_competence_queries():
     queries.update(get_armor_set_pieces_query())
     queries.update(get_sword_dps_query())
     queries.update(get_items_crafted_from())
+    queries.update(get_ore_height_range_query())
     return queries
