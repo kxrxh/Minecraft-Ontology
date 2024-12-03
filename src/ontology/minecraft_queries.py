@@ -97,50 +97,15 @@ def get_recipe_for(tool_name):
     return {f"Get recipe for {tool_name}": query}
 
 
-def get_mining_capability_query(tool_name="Diamond Pickaxe", ore_name="Iron Ore"):
-    # Query 1: Get required tool tier for the ore
-    # TODO: This query returns 0. Fix it!!
-    ore_query = f"""
-    SELECT ?required_tool
-    WHERE {{
-        ?ore a mc:Ore ;
-             rdfs:label "{ore_name}" ;
-             mc:requiresPickaxe ?required_tool .
-    }}
-    """
-
-    # Query 2: Get tool value mapping
-    tool_value_query = """
-    SELECT ?pickaxe_name ?tool_value 
-    WHERE {
-        VALUES (?pickaxe_name ?tool_value) {
-            ("Wooden Pickaxe"    1)
-            ("Stone Pickaxe"     2)
-            ("Iron Pickaxe"      3)
-            ("Golden Pickaxe"    2)
-            ("Diamond Pickaxe"   4)
-            ("Netherite Pickaxe" 5)
-        }
-    }
-    """
-
-    # Query 3: Get required tier value mapping
-    req_value_query = """
-    SELECT ?req_pickaxe ?req_value
-    WHERE {
-        VALUES (?req_pickaxe ?req_value) {
-            ("Wooden Pickaxe"    1)
-            ("Stone Pickaxe"     2)
-            ("Iron Pickaxe"      3)
-            ("Diamond Pickaxe"   4)
-            ("Netherite Pickaxe" 5)
-        }
-    }
-    """
-
-    # Combined final query
+def get_mining_capability_query(tool_name="Diamond Pickaxe", ore_name="Iron"):
+    # Remove "Ore" from the name and remove spaces, underscores, and hyphens
+    if "Ore" in ore_name:
+        ore_name = ore_name.replace("Ore", "")
+        ore_name = ore_name.replace(" ", "")
+        ore_name = ore_name.replace("_", "")
+        ore_name = ore_name.replace("-", "")
     query = f"""
-    SELECT ?required_tier (STR(?tool_name) AS ?tool_tier) (IF(?tool_value >= ?req_value, "Yes", "No") as ?can_mine)
+    SELECT (IF(?tool_value >= ?req_value, "Yes", "No") as ?can_mine)
     WHERE {{
         ?ore a mc:Ore ;
              rdfs:label "{ore_name}" ;
@@ -170,15 +135,15 @@ def get_mining_capability_query(tool_name="Diamond Pickaxe", ore_name="Iron Ore"
         FILTER(?req_pickaxe = ?required_tier)
     }}
     """
-    return {
-        f"Debug - Required tier for {ore_name}": ore_query,
-        f"Debug - Tool value mapping": tool_value_query, 
-        f"Debug - Required tier mapping": req_value_query,
-        f"Can {tool_name} mine {ore_name}?": query
-    }
+    return {f"Can {tool_name} mine {ore_name}?": query}
 
 
 def get_ore_mining_tools_query(ore_name="Diamond Ore"):
+    if "Ore" in ore_name:
+        ore_name = ore_name.replace("Ore", "")
+        ore_name = ore_name.replace(" ", "")
+        ore_name = ore_name.replace("_", "")
+        ore_name = ore_name.replace("-", "")
     return {
         f"2. What tools can mine {ore_name}?": f"""
         SELECT DISTINCT ?tool_name
@@ -213,20 +178,16 @@ def get_ore_mining_tools_query(ore_name="Diamond Ore"):
         """
     }
 
-
 def get_item_recipe_query(item_name="Diamond Sword"):
     return {
         f"3. What is the recipe for {item_name}?": f"""
-        SELECT ?material_name ?count ?grid
+        SELECT ?grid
         WHERE {{
             ?item rdfs:label "{item_name}" ;
                   mc:hasRecipe ?recipe .
-            ?recipe mc:usesMaterial ?material ;
-                    mc:materialCount ?count ;
-                    mc:recipeGrid ?grid .
-            ?material rdfs:label ?material_name .
+            ?recipe mc:recipeGrid ?grid .
         }}
-        ORDER BY ?material_name
+        LIMIT 1
         """
     }
 
@@ -271,6 +232,7 @@ def get_crafting_requirement_query(item_name="Diamond Sword", material_name="Sti
 
 
 def get_crafting_yield_query(item_name="Diamond Sword", material_name="Diamond"):
+    # TODO: This is not correct, it should be the number of items that can be crafted from the material
     return {
         f"7. How many {item_name}s can be crafted from {material_name}?": f"""
         SELECT (1/?count as ?items_per_material)
