@@ -185,7 +185,7 @@ def get_sword_damage_query(sword_name="Diamond Sword"):
 
 
 def get_crafting_requirement_query(
-    item_name="Diamond Sword", material_name="Iron Ingot"
+    item_name="Diamond Sword", material_name="Diamond"
 ):
     material_name = material_name.replace(" ", "_")
     material_count_property = f"mc:{material_name}_Count"
@@ -208,16 +208,16 @@ def get_crafting_requirement_query(
 
 
 def get_crafting_yield_query(item_name="Iron Pickaxe", material_name="Iron Ingot"):
-    material_count_property = f"mc:{material_name.replace(' ', '_')}_Count"
+    material_name = material_name.replace(" ", "_")
     return {
         f"7. How many {material_name} are needed to craft {item_name}?": f"""
-        SELECT (COALESCE(?count, 0) as ?count)
+        SELECT ?count
         WHERE {{
-            OPTIONAL {{
-                ?item rdfs:label "{item_name}" ;
-                      mc:hasRecipe ?recipe .
-                ?recipe {material_count_property} ?count .
-            }}
+            ?item rdfs:label "{item_name}" ;
+                  mc:hasRecipe ?recipe .
+            ?recipe mc:usesMaterial ?material .
+            ?material rdfs:label "{material_name}" .
+            ?recipe mc:{material_name}_Count ?count .
         }}
         """
     }

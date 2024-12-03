@@ -48,62 +48,62 @@ def create_minecraft_ontology():
     g.add((MC.SpecialTool, RDFS.subClassOf, MC.Tool))
 
     # Define recipe-related properties
+    g.add((MC.hasRecipe, RDF.type, OWL.ObjectProperty))
+    g.add((MC.hasRecipe, RDFS.domain, OWL.Thing))
+    g.add((MC.hasRecipe, RDFS.range, MC.Recipe))
+
     g.add((MC.usesMaterial, RDF.type, OWL.ObjectProperty))
     g.add((MC.usesMaterial, RDFS.domain, MC.Recipe))
     g.add((MC.usesMaterial, RDFS.range, MC.Material))
 
-    g.add((MC.primaryMaterial, RDF.type, OWL.ObjectProperty))
-    g.add((MC.primaryMaterial, RDFS.domain, MC.Recipe))
-    g.add((MC.primaryMaterial, RDFS.range, MC.Material))
-    g.add((MC.primaryMaterial, RDFS.subPropertyOf, MC.usesMaterial))
+    g.add((MC.materialCount, RDF.type, OWL.DatatypeProperty))
+    g.add((MC.materialCount, RDFS.domain, MC.Recipe))
+    g.add((MC.materialCount, RDFS.range, XSD.integer))
 
+    # For Diamond Sword recipe
+    sword_uri = TOOL["Diamond_Sword"]
+    sword_recipe_uri = RECIPE["Diamond_Sword_Recipe"]
+    diamond_uri = MATERIAL["Diamond"]
+    stick_uri = MATERIAL["Stick"]
 
-    # Recipe relationships (functional - each item has one primary recipe)
-    g.add((MC.hasPrimaryRecipe, RDF.type, OWL.FunctionalProperty))
-    g.add((MC.hasPrimaryRecipe, RDF.type, OWL.ObjectProperty))
-    g.add((MC.hasPrimaryRecipe, RDFS.domain, MC.Armor))
-    g.add((MC.hasPrimaryRecipe, RDFS.range, MC.Recipe))
+    # Add recipe relationships
+    g.add((sword_uri, MC.hasRecipe, sword_recipe_uri))
+    g.add((sword_recipe_uri, RDF.type, MC.Recipe))
+    g.add((sword_recipe_uri, MC.usesMaterial, diamond_uri))
+    g.add((sword_recipe_uri, MC.usesMaterial, stick_uri))
+    g.add(
+        (sword_recipe_uri, MC.materialCount, Literal(2, datatype=XSD.integer))
+    )  # Diamond count
+    g.add(
+        (sword_recipe_uri, MC.materialCount, Literal(1, datatype=XSD.integer))
+    )  # Stick count
 
-    # Inverse properties for materials and recipes
-    g.add((MC.usesMaterial, RDF.type, OWL.ObjectProperty))
-    g.add((MC.isUsedInRecipe, RDF.type, OWL.ObjectProperty))
-    g.add((MC.usesMaterial, OWL.inverseOf, MC.isUsedInRecipe))
+    # For Iron Pickaxe recipe
+    pickaxe_uri = TOOL["Iron_Pickaxe"]
+    pickaxe_recipe_uri = RECIPE["Iron_Pickaxe_Recipe"]
+    iron_uri = MATERIAL["Iron_Ingot"]
+    stick_uri = MATERIAL["Stick"]
 
-    # Material tier relationships (functional - each material has one tier)
-    g.add((MC.hasMaterialTier, RDF.type, OWL.FunctionalProperty))
-    g.add((MC.hasMaterialTier, RDF.type, OWL.ObjectProperty))
-    g.add((MC.hasMaterialTier, RDFS.domain, MC.Material))
-    g.add((MC.hasMaterialTier, RDFS.range, XSD.integer))
+    # Add recipe relationships
+    g.add((pickaxe_uri, MC.hasRecipe, pickaxe_recipe_uri))
+    g.add((pickaxe_recipe_uri, RDF.type, MC.Recipe))
+    g.add((pickaxe_recipe_uri, MC.usesMaterial, iron_uri))
+    g.add((pickaxe_recipe_uri, MC.usesMaterial, stick_uri))
+    
+    # Add specific material count properties
+    iron_count_property = MC["Iron_Ingot_Count"]
+    stick_count_property = MC["Stick_Count"]
+    
+    g.add((iron_count_property, RDF.type, OWL.DatatypeProperty))
+    g.add((stick_count_property, RDF.type, OWL.DatatypeProperty))
+    
+    g.add((pickaxe_recipe_uri, iron_count_property, Literal(3, datatype=XSD.integer)))
+    g.add((pickaxe_recipe_uri, stick_count_property, Literal(2, datatype=XSD.integer)))
 
-    # Armor set relationships
-    g.add((MC.isPartOfArmorSet, RDF.type, OWL.ObjectProperty))
-    g.add((MC.hasArmorPiece, RDF.type, OWL.ObjectProperty))
-    g.add((MC.isPartOfArmorSet, OWL.inverseOf, MC.hasArmorPiece))
-
-    # Protection value (functional - each armor piece has one protection value)
-    g.add((MC.hasProtectionValue, RDF.type, OWL.FunctionalProperty))
-    g.add((MC.hasProtectionValue, RDF.type, OWL.DatatypeProperty))
-    g.add((MC.hasProtectionValue, RDFS.domain, MC.Armor))
-    g.add((MC.hasProtectionValue, RDFS.range, XSD.integer))
-
-    # Durability (functional - each armor piece has one base durability)
-    g.add((MC.hasBaseDurability, RDF.type, OWL.FunctionalProperty))
-    g.add((MC.hasBaseDurability, RDF.type, OWL.DatatypeProperty))
-    g.add((MC.hasBaseDurability, RDFS.domain, MC.Armor))
-    g.add((MC.hasBaseDurability, RDFS.range, XSD.integer))
-
-    # Add sword-specific properties
-    g.add((MC.hasAttackDamage, RDF.type, OWL.DatatypeProperty))
-    g.add((MC.hasAttackDamage, RDFS.domain, MC.Tool))
-    g.add((MC.hasAttackDamage, RDFS.range, XSD.float))
-
-    g.add((MC.hasAttackSpeed, RDF.type, OWL.DatatypeProperty))
-    g.add((MC.hasAttackSpeed, RDFS.domain, MC.Tool))
-    g.add((MC.hasAttackSpeed, RDFS.range, XSD.float))
-
-    g.add((MC.hasDPS, RDF.type, OWL.DatatypeProperty))
-    g.add((MC.hasDPS, RDFS.domain, MC.Tool))
-    g.add((MC.hasDPS, RDFS.range, XSD.float))
+    # Add labels
+    g.add((pickaxe_uri, RDFS.label, Literal("Iron Pickaxe")))
+    g.add((iron_uri, RDFS.label, Literal("Iron Ingot")))
+    g.add((stick_uri, RDFS.label, Literal("Stick")))
 
     # Load ore data from JSON
     ores_data = load_json_data(PROCESSED_DATA_DIR, "ore_data.json")
@@ -301,6 +301,16 @@ def create_minecraft_ontology():
             g.add((armor_set_uri, RDFS.label, Literal(f"{found_material} Set")))
             g.add((armor_uri, MC.isPartOfArmorSet, armor_set_uri))
 
+            # Add explicit piece type relation
+            for slot in armor_slots:
+                if slot in armor_name.lower():
+                    piece_type = MC[f"is{slot.title()}"]
+                    g.add((piece_type, RDF.type, OWL.ObjectProperty))
+                    g.add((piece_type, RDFS.domain, MC.ArmorSet))
+                    g.add((piece_type, RDFS.range, MC.Armor))
+                    g.add((armor_set_uri, piece_type, armor_uri))
+                    break
+
             # Add material tier
             material_tiers = {
                 "Leather": 1,
@@ -472,6 +482,45 @@ def create_minecraft_ontology():
         g.add((tool_uri, RDF.type, MC.Tool))
         g.add((tool_uri, RDF.type, MC.SpecialTool))
         g.add((tool_uri, RDFS.label, Literal(tool.replace("_", " "))))
+
+    # For Diamond Sword materials
+    sword_uri = TOOL["Diamond_Sword"]
+    diamond_uri = MATERIAL["Diamond"]
+    stick_uri = MATERIAL["Stick"]
+    g.add((sword_uri, MC.usesMaterial, diamond_uri))
+    g.add((sword_uri, MC.usesMaterial, stick_uri))
+
+    # For Diamond Ore pickaxe requirements
+    diamond_ore_uri = ORE["Diamond_Ore"]
+    iron_pickaxe_uri = TOOL["Iron_Pickaxe"]
+    g.add((diamond_ore_uri, MC.requiresPickaxe, iron_pickaxe_uri))
+
+    # For Diamond Set pieces
+    diamond_set_uri = ARMOR["Diamond_Set"]
+    g.add((diamond_set_uri, RDF.type, MC.ArmorSet))
+    for piece in ["Helmet", "Chestplate", "Leggings", "Boots"]:
+        piece_uri = ARMOR[f"Diamond_{piece}"]
+        g.add((piece_uri, MC.isPartOfArmorSet, diamond_set_uri))
+        g.add((diamond_set_uri, MC.hasArmorPiece, piece_uri))
+
+    # For Diamond crafting uses
+    for item in [
+        "Sword",
+        "Pickaxe",
+        "Axe",
+        "Shovel",
+        "Helmet",
+        "Chestplate",
+        "Leggings",
+        "Boots",
+    ]:
+        item_uri = (
+            TOOL[f"Diamond_{item}"]
+            if item in ["Sword", "Pickaxe", "Axe", "Shovel"]
+            else ARMOR[f"Diamond_{item}"]
+        )
+        g.add((diamond_uri, MC.isUsedIn, item_uri))
+        g.add((item_uri, MC.usesMaterial, diamond_uri))
 
     return g, {}
 

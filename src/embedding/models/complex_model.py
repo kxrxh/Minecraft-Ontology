@@ -42,3 +42,30 @@ class ComplExModel(nn.Module):
             dim=1,
         )
         return score
+
+    def predict_tails(self, head_indices, relation_indices):
+        """
+        Predict scores for all possible tail entities.
+        Returns scores normalized with sigmoid.
+        """
+        # Get embeddings
+        head_real = self.emb_e_real(head_indices)
+        head_img = self.emb_e_img(head_indices)
+        rel_real = self.emb_rel_real(relation_indices)
+        rel_img = self.emb_rel_img(relation_indices)
+        
+        # Get all possible tail embeddings
+        all_ent_real = self.emb_e_real.weight
+        all_ent_img = self.emb_e_img.weight
+        
+        # Complex multiplication for scoring
+        scores = torch.mm(
+            head_real * rel_real - head_img * rel_img,
+            all_ent_real.t()
+        ) + torch.mm(
+            head_real * rel_img + head_img * rel_real,
+            all_ent_img.t()
+        )
+        
+        # Apply sigmoid to normalize scores
+        return torch.sigmoid(scores)

@@ -18,27 +18,37 @@ class ComplExTrainer:
             batch_indices = indices[i:i + batch_size]
             batch = triples_tensor[batch_indices]
 
-            # Позитивные примеры
+            # Positive examples
             pos_scores = self.model(batch[:, 0], batch[:, 1], batch[:, 2])
 
-            # Создаем негативные примеры
-            neg_batch = batch.clone()
-            corrupt_idx = torch.randint(2, (len(batch),), device=self.device) * 2
-            random_entities = torch.randint(num_entities, (len(batch),), device=self.device)
-            neg_batch[torch.arange(len(batch), device=self.device), corrupt_idx] = random_entities
+            # Generate multiple negative samples per positive
+            num_neg = 5  # Number of negative samples per positive
+            neg_scores_list = []
+            
+            for _ in range(num_neg):
+                # Corrupt either head or tail
+                neg_batch = batch.clone()
+                corrupt_idx = torch.randint(2, (len(batch),), device=self.device) * 2
+                random_entities = torch.randint(num_entities, (len(batch),), device=self.device)
+                neg_batch[torch.arange(len(batch), device=self.device), corrupt_idx] = random_entities
+                
+                # Get scores for negative samples
+                neg_scores = self.model(neg_batch[:, 0], neg_batch[:, 1], neg_batch[:, 2])
+                neg_scores_list.append(neg_scores)
 
-            # Негативные скоры
-            neg_scores = self.model(neg_batch[:, 0], neg_batch[:, 1], neg_batch[:, 2])
+            # Combine all negative scores
+            neg_scores = torch.cat(neg_scores_list)
 
-            # Вычисляем loss
-            labels = torch.cat([
-                torch.ones_like(pos_scores, device=self.device),
-                torch.zeros_like(neg_scores, device=self.device)
-            ])
-            scores = torch.cat([pos_scores, neg_scores])
-            loss = self.criterion(scores, labels)
+            # Compute loss with margin ranking
+            margin = 1.0
+            target = torch.ones_like(pos_scores, device=self.device)
+            loss = self.criterion(pos_scores, target)
+            
+            # Add margin ranking loss
+            for neg_score in neg_scores_list:
+                loss += torch.mean(torch.relu(margin - (pos_scores - neg_score)))
 
-            # Обратное распространение
+            # Backward pass
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
