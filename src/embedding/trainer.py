@@ -3,6 +3,7 @@ import torch.optim as optim
 import torch.nn as nn
 import numpy as np
 
+
 class ComplExTrainer:
     def __init__(self, model, device, lr=0.0005):
         self.model = model
@@ -15,7 +16,7 @@ class ComplExTrainer:
         total_loss = 0
 
         for i in range(0, len(triples_tensor), batch_size):
-            batch_indices = indices[i:i + batch_size]
+            batch_indices = indices[i : i + batch_size]
             batch = triples_tensor[batch_indices]
 
             # Positive examples
@@ -24,16 +25,22 @@ class ComplExTrainer:
             # Generate multiple negative samples per positive
             num_neg = 5  # Number of negative samples per positive
             neg_scores_list = []
-            
+
             for _ in range(num_neg):
                 # Corrupt either head or tail
                 neg_batch = batch.clone()
                 corrupt_idx = torch.randint(2, (len(batch),), device=self.device) * 2
-                random_entities = torch.randint(num_entities, (len(batch),), device=self.device)
-                neg_batch[torch.arange(len(batch), device=self.device), corrupt_idx] = random_entities
-                
+                random_entities = torch.randint(
+                    num_entities, (len(batch),), device=self.device
+                )
+                neg_batch[torch.arange(len(batch), device=self.device), corrupt_idx] = (
+                    random_entities
+                )
+
                 # Get scores for negative samples
-                neg_scores = self.model(neg_batch[:, 0], neg_batch[:, 1], neg_batch[:, 2])
+                neg_scores = self.model(
+                    neg_batch[:, 0], neg_batch[:, 1], neg_batch[:, 2]
+                )
                 neg_scores_list.append(neg_scores)
 
             # Combine all negative scores
@@ -43,7 +50,7 @@ class ComplExTrainer:
             margin = 1.0
             target = torch.ones_like(pos_scores, device=self.device)
             loss = self.criterion(pos_scores, target)
-            
+
             # Add margin ranking loss
             for neg_score in neg_scores_list:
                 loss += torch.mean(torch.relu(margin - (pos_scores - neg_score)))
@@ -74,4 +81,4 @@ class ComplExTrainer:
                 img = self.model.emb_rel_img(idx_tensor).cpu().numpy()[0]
                 relation_embeddings[relation] = np.concatenate([real, img])
 
-        return entity_embeddings, relation_embeddings 
+        return entity_embeddings, relation_embeddings

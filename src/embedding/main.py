@@ -8,6 +8,12 @@ from src.embedding.utils.visualization import (
     visualize_embeddings_with_colors,
     analyze_clusters,
 )
+import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn import metrics
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
@@ -119,6 +125,10 @@ def create_minecraft_embeddings(
         print(f"\nCluster {cluster_id}:")
         for entity in entities[:5]:
             print(f"  {entity}")
+
+    # Добавляем анализ качества эмбеддингов
+    print("\nAnalyzing embedding quality...")
+    plot_df = analyze_embeddings_quality(model, entity_embeddings, entity_to_idx)
 
     return model, entity_embeddings, relation_embeddings
 
@@ -313,9 +323,70 @@ def stratified_split_triples(triples, test_size=0.1):
     return train_triples, test_triples
 
 
+def analyze_embeddings_quality(model, entity_embeddings, entity_to_idx):
+    """
+    Analyze embeddings quality using visualization and clustering metrics
+    """
+    # Get relevant entities (Sets and materials)
+    relevant_entities = [
+        ent
+        for ent in entity_to_idx.keys()
+        if any(
+            key in ent for key in ["Set", "Diamond", "Iron", "Gold", "Wood", "Stone"]
+        )
+    ]
+
+    # Get embeddings for relevant entities
+    relevant_embeddings = np.array(
+        [entity_embeddings[ent] for ent in relevant_entities]
+    )
+
+    # Project to 2D using PCA
+    embeddings_2d = PCA(n_components=2).fit_transform(relevant_embeddings)
+
+    # Perform clustering
+    n_clusters = 6
+    clustering = KMeans(n_clusters=n_clusters, n_init=10, random_state=42)
+    clusters = clustering.fit_predict(relevant_embeddings)
+
+    # Create visualization dataframe
+    plot_df = pd.DataFrame(
+        {
+            "entity": relevant_entities,
+            "x": embeddings_2d[:, 0],
+            "y": embeddings_2d[:, 1],
+            "cluster": clusters,
+        }
+    )
+
+    # Plot
+    plt.figure(figsize=(12, 8))
+    sns.scatterplot(data=plot_df, x="x", y="y", hue="cluster", style="cluster")
+
+    # Add labels for all points since we're only showing relevant entities
+    for _, row in plot_df.iterrows():
+        plt.annotate(row["entity"], (row["x"], row["y"]))
+
+    plt.title("Entity Embeddings Visualization")
+    plt.show()
+
+    # Calculate clustering metrics
+    if len(clusters) > 1:
+        silhouette = metrics.silhouette_score(embeddings_2d, clusters)
+        calinski = metrics.calinski_harabasz_score(embeddings_2d, clusters)
+        davies = metrics.davies_bouldin_score(embeddings_2d, clusters)
+
+        print("\nClustering Quality Metrics:")
+        print(f"Silhouette Score: {silhouette:.3f}")
+        print(f"Calinski-Harabasz Score: {calinski:.3f}")
+        print(f"Davies-Bouldin Score: {davies:.3f}")
+
+    return plot_df
+
+
 if __name__ == "__main__":
     model, entity_embeddings, relation_embeddings = create_minecraft_embeddings(
-        embedding_dim=150,  # Increased dimension
+        embedding_dim=200,  # Increased dimension
         num_epochs=400,
         batch_size=64,
         lr=0.0005,

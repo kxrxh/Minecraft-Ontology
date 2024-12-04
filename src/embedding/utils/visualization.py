@@ -30,7 +30,9 @@ def visualize_embeddings_with_colors(entity_embeddings):
 
     # Отрисовываем точки по категориям
     for category, color in categories.items():
-        mask = np.array([str(category) in str(entity) for entity in entity_embeddings.keys()])
+        mask = np.array(
+            [str(category) in str(entity) for entity in entity_embeddings.keys()]
+        )
         if np.any(mask):
             plt.scatter(
                 embeddings_2d[mask, 0],
