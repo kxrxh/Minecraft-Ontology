@@ -58,13 +58,7 @@ def get_tool_queries():
     }
 
 
-def get_mining_capability_query(tool_name="Diamond Pickaxe", ore_name="Iron"):
-    # Remove "Ore" from the name and remove spaces, underscores, and hyphens
-    if "Ore" in ore_name:
-        ore_name = ore_name.replace("Ore", "")
-        ore_name = ore_name.replace(" ", "")
-        ore_name = ore_name.replace("_", "")
-        ore_name = ore_name.replace("-", "")
+def get_mining_capability_query(tool_name="Diamond Pickaxe", ore_name="Iron_Ore"):
     query = f"""
     SELECT (IF(?tool_value >= ?req_value, "Yes", "No") as ?can_mine)
     WHERE {{
@@ -81,7 +75,6 @@ def get_mining_capability_query(tool_name="Diamond Pickaxe", ore_name="Iron"):
             ("Iron Pickaxe"      3)
             ("Golden Pickaxe"    2)
             ("Diamond Pickaxe"   4)
-            ("Netherite Pickaxe" 5)
         }}
         
         VALUES (?req_pickaxe ?req_value) {{
@@ -89,7 +82,6 @@ def get_mining_capability_query(tool_name="Diamond Pickaxe", ore_name="Iron"):
             ("Stone Pickaxe"     2)
             ("Iron Pickaxe"      3)
             ("Diamond Pickaxe"   4)
-            ("Netherite Pickaxe" 5)
         }}
         
         FILTER(?pickaxe_name = ?tool_name)
@@ -99,12 +91,7 @@ def get_mining_capability_query(tool_name="Diamond Pickaxe", ore_name="Iron"):
     return {f"Can {tool_name} mine {ore_name}?": query}
 
 
-def get_ore_mining_tools_query(ore_name="Diamond Ore"):
-    if "Ore" in ore_name:
-        ore_name = ore_name.replace("Ore", "")
-        ore_name = ore_name.replace(" ", "")
-        ore_name = ore_name.replace("_", "")
-        ore_name = ore_name.replace("-", "")
+def get_ore_mining_tools_query(ore_name="Diamond_Ore"):
     return {
         f"2. What tools can mine {ore_name}?": f"""
         SELECT DISTINCT ?tool_name
@@ -272,14 +259,7 @@ def get_items_crafted_from(material_x="Iron Ingot", material_y="Stick"):
     }
 
 
-def get_ore_height_range_query(ore_name="Emerald Ore"):
-    # Clean up ore name
-    if "Ore" in ore_name:
-        ore_name = ore_name.replace("Ore", "")
-        ore_name = ore_name.replace(" ", "")
-        ore_name = ore_name.replace("_", "")
-        ore_name = ore_name.replace("-", "")
-    
+def get_ore_height_range_query(ore_name="Emerald_Ore"):
     return {
         f"11. On which layer can {ore_name} be found?": f"""
         SELECT ?layer_name

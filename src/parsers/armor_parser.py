@@ -10,12 +10,13 @@ class ArmorParser(RecipeParser):
         armor_links = []
 
         armor_keywords = [
-            "helmet",
-            "chestplate",
-            "leggings",
-            "boots",
-            "tunic",
-            "cap",
+            "Helmet",
+            "Chestplate",
+            "Leggings",
+            "Boots",
+            "Tunic",
+            "Cap",
+            "Pants",
         ]
 
         for link in soup.find_all("a"):
@@ -24,7 +25,7 @@ class ArmorParser(RecipeParser):
 
             if (
                 url
-                and any(keyword in name.lower() for keyword in armor_keywords)
+                and any(keyword in name for keyword in armor_keywords)
                 and len(name.split(" ")) == 2
                 and name[0].isupper()
                 and "netherite" not in name.lower()  # Exclude Netherite armors

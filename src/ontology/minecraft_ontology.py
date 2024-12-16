@@ -89,14 +89,14 @@ def create_minecraft_ontology():
     g.add((pickaxe_recipe_uri, RDF.type, MC.Recipe))
     g.add((pickaxe_recipe_uri, MC.usesMaterial, iron_uri))
     g.add((pickaxe_recipe_uri, MC.usesMaterial, stick_uri))
-    
+
     # Add specific material count properties
     iron_count_property = MC["Iron_Ingot_Count"]
     stick_count_property = MC["Stick_Count"]
-    
+
     g.add((iron_count_property, RDF.type, OWL.DatatypeProperty))
     g.add((stick_count_property, RDF.type, OWL.DatatypeProperty))
-    
+
     g.add((pickaxe_recipe_uri, iron_count_property, Literal(3, datatype=XSD.integer)))
     g.add((pickaxe_recipe_uri, stick_count_property, Literal(2, datatype=XSD.integer)))
 
@@ -110,7 +110,8 @@ def create_minecraft_ontology():
 
     # Add ore information
     for ore_name, ore_data in ores_data.items():
-        ore_uri = ORE[ore_name.replace(" ", "_")]
+        ore_name = ore_name.replace(" ", "_") + "_Ore"
+        ore_uri = ORE[ore_name]
         g.add((ore_uri, RDF.type, MC.Ore))
         g.add((ore_uri, RDFS.label, Literal(ore_name)))
 
@@ -279,7 +280,6 @@ def create_minecraft_ontology():
             "chainmail": "Chainmail",
             "iron": "Iron",
             "diamond": "Diamond",
-            "netherite": "Netherite",
         }
 
         armor_slots = ["helmet", "chestplate", "leggings", "boots"]
@@ -301,15 +301,17 @@ def create_minecraft_ontology():
             g.add((armor_set_uri, RDFS.label, Literal(f"{found_material} Set")))
             g.add((armor_uri, MC.isPartOfArmorSet, armor_set_uri))
 
-            # Add explicit piece type relation
-            for slot in armor_slots:
-                if slot in armor_name.lower():
-                    piece_type = MC[f"is{slot.title()}"]
-                    g.add((piece_type, RDF.type, OWL.ObjectProperty))
-                    g.add((piece_type, RDFS.domain, MC.ArmorSet))
-                    g.add((piece_type, RDFS.range, MC.Armor))
-                    g.add((armor_set_uri, piece_type, armor_uri))
-                    break
+            # Connect armor set to its pieces
+            if any(["helmet" in armor_name.lower(), "cap" in armor_name.lower()]):
+                g.add((armor_set_uri, MC.hasHelmet, armor_uri))
+            elif any(
+                ["chestplate" in armor_name.lower(), "tunic" in armor_name.lower()]
+            ):
+                g.add((armor_set_uri, MC.hasChestplate, armor_uri))
+            elif any(["leggings" in armor_name.lower(), "pants" in armor_name.lower()]):
+                g.add((armor_set_uri, MC.hasLeggings, armor_uri))
+            elif "boots" in armor_name.lower():
+                g.add((armor_set_uri, MC.hasBoots, armor_uri))
 
             # Add material tier
             material_tiers = {
@@ -318,7 +320,6 @@ def create_minecraft_ontology():
                 "Chainmail": 3,
                 "Iron": 4,
                 "Diamond": 5,
-                "Netherite": 6,
             }
             g.add(
                 (
@@ -482,26 +483,6 @@ def create_minecraft_ontology():
         g.add((tool_uri, RDF.type, MC.Tool))
         g.add((tool_uri, RDF.type, MC.SpecialTool))
         g.add((tool_uri, RDFS.label, Literal(tool.replace("_", " "))))
-
-    # For Diamond Sword materials
-    sword_uri = TOOL["Diamond_Sword"]
-    diamond_uri = MATERIAL["Diamond"]
-    stick_uri = MATERIAL["Stick"]
-    g.add((sword_uri, MC.usesMaterial, diamond_uri))
-    g.add((sword_uri, MC.usesMaterial, stick_uri))
-
-    # For Diamond Ore pickaxe requirements
-    diamond_ore_uri = ORE["Diamond_Ore"]
-    iron_pickaxe_uri = TOOL["Iron_Pickaxe"]
-    g.add((diamond_ore_uri, MC.requiresPickaxe, iron_pickaxe_uri))
-
-    # For Diamond Set pieces
-    diamond_set_uri = ARMOR["Diamond_Set"]
-    g.add((diamond_set_uri, RDF.type, MC.ArmorSet))
-    for piece in ["Helmet", "Chestplate", "Leggings", "Boots"]:
-        piece_uri = ARMOR[f"Diamond_{piece}"]
-        g.add((piece_uri, MC.isPartOfArmorSet, diamond_set_uri))
-        g.add((diamond_set_uri, MC.hasArmorPiece, piece_uri))
 
     # For Diamond crafting uses
     for item in [

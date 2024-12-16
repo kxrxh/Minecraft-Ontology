@@ -9,11 +9,11 @@ import time
 
 def run_all_parsers():
     """Run all parsers in sequence and save their data."""
-    print("\n=== Starting Tool Parser ===")
-    tool_parser = ToolParser()
-    tool_data = tool_parser.get_tool_data()
-    save_json_data(tool_data, PROCESSED_DATA_DIR, "tool_recipes.json")
-    time.sleep(2)  # Add delay between major operations
+    # print("\n=== Starting Tool Parser ===")
+    # tool_parser = ToolParser()
+    # tool_data = tool_parser.get_tool_data()
+    # save_json_data(tool_data, PROCESSED_DATA_DIR, "tool_recipes.json")
+    # time.sleep(2)  # Add delay between major operations
 
     print("\n=== Starting Armor Parser ===")
     armor_parser = ArmorParser()
